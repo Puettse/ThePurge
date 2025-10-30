@@ -63,3 +63,8 @@
 - CODEMAP.md refreshed
 - VERSION.json bumped to 1.0.3
 
+## [1.0.4] - 2025-10-30
+✨ Automated update
+- CODEMAP.md refreshed
+- VERSION.json bumped to 1.0.4
+
