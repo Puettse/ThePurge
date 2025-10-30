@@ -1,15 +1,12 @@
 {
   "name": "thepurge",
-  "version": "2.2.0",
-  "description": "💀 The Purge — Discord media purge bot using embed-based setup, with error handling and user targeting support.",
-  "main": "index.js",
+  "version": "3.0.0",
   "type": "module",
-  "scripts": {
-    "start": "node index.js"
-  },
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "pg": "^8.11.3",
-    "express": "^4.19.2"
+    "discord.js": "^15.0.0",
+    "pg": "^8.12.0",
+    "dotenv": "^16.4.5"
   }
 }
