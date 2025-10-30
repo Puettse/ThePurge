@@ -1,0 +1,26 @@
+{
+  "name": "The Purge",
+  "version": "1.0.0",
+  "codename": "The First Purge",
+  "release_date": "2025-10-30",
+  "description": "A Discord bot that automatically purges media messages — attachments, GIFs, stickers, and emojis — from selected channels on a timed schedule.",
+  "author": "Code Copilot",
+  "license": "MIT",
+  "database": "PostgreSQL (Railway)",
+  "framework": "discord.js v14",
+  "repository": "https://github.com/YOUR_USERNAME/ThePurge",
+  "changelog": {
+    "highlights": [
+      "Interactive setup using ,p command",
+      "Configurable purge intervals (seconds, minutes, hours, days)",
+      "Selectable media types (attachments, GIFs, stickers, emojis, all)",
+      "SQL persistence for saved purge settings",
+      "Automatic resume of purge tasks after restart"
+    ],
+    "next": [
+      "Add user-specific purge targeting",
+      "Add ,p status command",
+      "Add purge logging and error reporting"
+    ]
+  }
+}
