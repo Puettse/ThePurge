@@ -1,7 +1,7 @@
 {
   "name": "thepurge",
-  "version": "2.0.0",
-  "description": "💀 A Discord bot named 'The Purge' that automatically deletes media messages (attachments, GIFs, stickers, and emojis) from selected channels on a schedule, with SQL persistence, logging, and health checks.",
+  "version": "2.2.0",
+  "description": "💀 The Purge — Discord media purge bot using embed-based setup, with error handling and user targeting support.",
   "main": "index.js",
   "type": "module",
   "scripts": {
