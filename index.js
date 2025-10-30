@@ -125,8 +125,9 @@ async function collectInput(channel, userId, question, validateFn) {
 }
 
 // COMMANDS
-client.on("messageCreate", async msg => {
-  if (msg.author.bot || !msg.content.startsWith(prefix)) return;
+client.once('clientReady', () => {
+  console.log(`💀 The Purge ready as ${client.user.tag}`);
+});
   const args = msg.content.slice(prefix.length).trim().split(/\s+/);
   const cmd = args.shift()?.toLowerCase();
 
