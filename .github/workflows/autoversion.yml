@@ -1,0 +1,67 @@
+name: 🔁 Auto Version Sync
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  autoversion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 🔍 Read and bump version
+        id: bump
+        run: |
+          echo "Reading current version..."
+          current=$(jq -r '.version' VERSION.json)
+          major=$(echo $current | cut -d. -f1)
+          minor=$(echo $current | cut -d. -f2)
+          patch=$(echo $current | cut -d. -f3)
+          new_patch=$((patch + 1))
+          new_version="$major.$minor.$new_patch"
+          echo "New version: $new_version"
+          jq --arg v "$new_version" --arg date "$(date +'%Y-%m-%d')" \
+             '.version=$v | .release_date=$date' VERSION.json > tmp && mv tmp VERSION.json
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+
+      - name: 🧱 Update CODEMAP.md
+        run: |
+          echo "# 🧭 Code Map (Auto Updated)" > CODEMAP.md
+          echo "> Generated automatically on $(date)" >> CODEMAP.md
+          echo "" >> CODEMAP.md
+          echo "## 📂 Repository Structure" >> CODEMAP.md
+          tree -I "node_modules|.git" -L 2 >> CODEMAP.md || echo "(tree unavailable)" >> CODEMAP.md
+          echo "" >> CODEMAP.md
+          echo "## 🧾 Version Info" >> CODEMAP.md
+          jq -r '"Version: " + .version + "\nCodename: " + .codename + "\nRelease Date: " + .release_date' VERSION.json >> CODEMAP.md
+          echo "" >> CODEMAP.md
+          echo "## 🧑‍💻 Maintainer" >> CODEMAP.md
+          echo "Auto-updated by GitHub Actions" >> CODEMAP.md
+
+      - name: 🧾 Append CHANGELOG entry
+        run: |
+          echo "## [${{ steps.bump.outputs.version }}] - $(date +'%Y-%m-%d')" >> CHANGELOG.md
+          echo "✨ Automated update" >> CHANGELOG.md
+          echo "- CODEMAP.md refreshed" >> CHANGELOG.md
+          echo "- VERSION.json bumped to ${{ steps.bump.outputs.version }}" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+      - name: 💾 Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION.json CODEMAP.md CHANGELOG.md
+          git commit -m "🤖 Auto-update: version ${{ steps.bump.outputs.version }}" || echo "No changes to commit."
+          git push
