@@ -3,50 +3,46 @@ import {
   Client,
   GatewayIntentBits,
   Partials,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  EmbedBuilder,
-} from 'discord.js';
-import pkg from 'pg';
-import express from 'express';
-import fs from 'fs';
+  EmbedBuilder
+} from "discord.js";
+import pkg from "pg";
+import express from "express";
+import fs from "fs";
 const { Client: PgClient } = pkg;
 
-// --- ENVIRONMENT ---
+// ENV
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!BOT_TOKEN || !DATABASE_URL) {
-  console.error('❌ Missing BOT_TOKEN or DATABASE_URL. Add them in Railway → Variables.');
+  console.error("❌ Missing BOT_TOKEN or DATABASE_URL. Add them in Railway → Variables.");
   process.exit(1);
 }
 
-// --- HEALTH CHECK SERVER ---
+// HEALTH CHECK
 const app = express();
-app.get('/', (req, res) => res.send('OK'));
-app.listen(3000, () => console.log('🩺 Health check active on port 3000'));
+app.get("/", (_, res) => res.send("OK"));
+app.listen(3000, () => console.log("🩺 Health check active on port 3000"));
 
-// --- VERSION INFO ---
-const versionData = JSON.parse(fs.readFileSync('./VERSION.json', 'utf-8'));
+// VERSION
+const versionData = JSON.parse(fs.readFileSync("./VERSION.json", "utf8"));
 console.log(`💀 ${versionData.name} v${versionData.version} — ${versionData.codename}`);
-console.log(`📅 Released: ${versionData.release_date}`);
 
-// --- DISCORD CLIENT ---
+// DISCORD CLIENT
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMembers
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.GuildMember],
+  partials: [Partials.Message, Partials.Channel, Partials.GuildMember]
 });
-const prefix = ',';
+const prefix = ",";
 const purgeTasks = new Map();
 
-// --- DATABASE ---
+// DB
 const db = new PgClient({ connectionString: DATABASE_URL });
 await db.connect();
-
 await db.query(`
 CREATE TABLE IF NOT EXISTS purge_configs (
   id SERIAL PRIMARY KEY,
@@ -60,184 +56,188 @@ CREATE TABLE IF NOT EXISTS purge_configs (
 );
 `);
 
-// --- HELPERS ---
+// HELPERS
 function parseInterval(value) {
-  const unit = value.slice(-1);
+  const map = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
   const num = parseInt(value);
-  switch (unit) {
-    case 's': return num * 1000;
-    case 'm': return num * 60 * 1000;
-    case 'h': return num * 60 * 60 * 1000;
-    case 'd': return num * 24 * 60 * 60 * 1000;
-    default: return null;
-  }
+  const unit = value.at(-1);
+  return map[unit] ? num * map[unit] : null;
 }
 
-function shouldDeleteMessage(msg, mediaTypes, targetUserId) {
-  if (targetUserId && msg.author.id !== targetUserId) return false;
-  if (mediaTypes.includes('all')) {
-    return msg.attachments.size > 0 || msg.embeds.length > 0 || msg.stickers.size > 0;
-  }
-  let result = false;
-  if (mediaTypes.includes('attachments') && msg.attachments.size > 0) result = true;
-  if (mediaTypes.includes('stickers') && msg.stickers.size > 0) result = true;
-  if (mediaTypes.includes('gifs') && msg.embeds.some(e => e.url?.includes('.gif'))) result = true;
-  if (mediaTypes.includes('emojis') && /<:.+?:\d+>/.test(msg.content)) result = true;
-  return result;
+function shouldDelete(msg, types, targetUser) {
+  if (targetUser && msg.author.id !== targetUser) return false;
+  if (types.includes("all"))
+    return msg.attachments.size || msg.embeds.length || msg.stickers.size;
+  if (types.includes("attachments") && msg.attachments.size) return true;
+  if (types.includes("gifs") && msg.embeds.some(e => e.url?.includes(".gif"))) return true;
+  if (types.includes("stickers") && msg.stickers.size) return true;
+  if (types.includes("emojis") && /<:.+?:\d+>/.test(msg.content)) return true;
+  return false;
 }
 
-async function startPurgeTask(guildId, channelId, intervalMs, mediaTypes, userId, logChannelId) {
+async function startTask(guildId, channelId, intervalMs, types, userId, logChannelId) {
   const channel = await client.channels.fetch(channelId).catch(() => null);
-  const logChannel = logChannelId ? await client.channels.fetch(logChannelId).catch(() => null) : null;
-  if (!channel || !channel.isTextBased()) return;
+  const log = logChannelId ? await client.channels.fetch(logChannelId).catch(() => null) : null;
+  if (!channel) return;
 
-  console.log(`🩸 The Purge active in #${channel.name} every ${intervalMs / 1000}s`);
-
-  const task = setInterval(async () => {
+  const loop = setInterval(async () => {
     try {
-      const messages = await channel.messages.fetch({ limit: 100 });
-      const toDelete = messages.filter(msg => shouldDeleteMessage(msg, mediaTypes, userId));
-      for (const msg of toDelete.values()) await msg.delete().catch(() => {});
-      if (toDelete.size > 0) {
-        const summary = `🧹 The Purge deleted ${toDelete.size} message(s) in ${channel} (${mediaTypes.join(', ')})`;
-        console.log(summary);
-        if (logChannel) await logChannel.send(summary).catch(() => {});
-      }
-    } catch (err) {
-      console.error('💀 Purge error:', err.message);
+      const msgs = await channel.messages.fetch({ limit: 100 });
+      const del = msgs.filter(m => shouldDelete(m, types, userId));
+      for (const m of del.values()) await m.delete().catch(() => {});
+      if (del.size)
+        log?.send(`🧹 Purged ${del.size} message(s) in ${channel}`).catch(() => {});
+    } catch (e) {
+      console.error("purge loop error:", e.message);
     }
   }, intervalMs);
 
-  purgeTasks.set(channelId, task);
+  purgeTasks.set(channelId, loop);
 }
 
-// --- RESTORE TASKS ON STARTUP ---
-client.once('ready', async () => {
-  console.log(`💀 The Purge has begun... logged in as ${client.user.tag}`);
-  const res = await db.query('SELECT * FROM purge_configs WHERE active = true');
-  for (const row of res.rows) {
-    startPurgeTask(row.guild_id, row.channel_id, row.interval_ms, row.media_types, row.user_id, row.log_channel_id);
-  }
+// RESTORE ON START
+client.once("ready", async () => {
+  console.log(`💀 The Purge ready as ${client.user.tag}`);
+  const res = await db.query("SELECT * FROM purge_configs WHERE active=true");
+  for (const r of res.rows)
+    startTask(r.guild_id, r.channel_id, r.interval_ms, r.media_types, r.user_id, r.log_channel_id);
 });
 
-// --- COMMAND HANDLER ---
-client.on('messageCreate', async (message) => {
-  if (message.author.bot || !message.content.startsWith(prefix)) return;
-  const args = message.content.slice(prefix.length).trim().split(/\s+/);
-  const command = args.shift()?.toLowerCase();
-
-  // Stop purge
-  if (command === 'p' && args[0] === 'stop') {
-    const existing = await db.query(
-      'UPDATE purge_configs SET active = false WHERE channel_id = $1 RETURNING *',
-      [message.channel.id]
-    );
-    if (purgeTasks.has(message.channel.id)) {
-      clearInterval(purgeTasks.get(message.channel.id));
-      purgeTasks.delete(message.channel.id);
+// SAFE COLLECT FUNCTION WITH RETRIES
+async function collectInput(channel, userId, question, validateFn) {
+  const filter = m => m.author.id === userId;
+  for (let i = 0; i < 3; i++) {
+    await channel.send(question);
+    const collected = await channel
+      .awaitMessages({ filter, max: 1, time: 60000 })
+      .catch(() => null);
+    const input = collected?.first()?.content?.trim();
+    if (!input) {
+      await channel.send("⏰ Timeout or no input. Please try again.");
+      continue;
     }
-    if (existing.rowCount > 0)
-      return message.reply(`🛑 The Purge has ceased in ${message.channel}.`);
-    else return message.reply('⚠️ No active purge found here.');
+    if (input.toLowerCase() === "cancel") throw new Error("cancelled");
+    const valid = await validateFn(input);
+    if (valid) return valid;
+    await channel.send("⚠️ Invalid input, please try again.");
   }
+  throw new Error("too many attempts");
+}
 
-  // Status command
-  if (command === 'p' && args[0] === 'status') {
-    const res = await db.query('SELECT * FROM purge_configs WHERE guild_id = $1 AND active = true', [message.guild.id]);
-    if (res.rowCount === 0) return message.reply('💤 No active purges in this server.');
-    const list = res.rows.map(r =>
-      `#${message.guild.channels.cache.get(r.channel_id)?.name || 'unknown'} → every ${r.interval_ms / 1000}s → ${r.media_types.join(', ')}`
-    ).join('\n');
-    return message.reply(`💀 **Active Purges:**\n${list}`);
-  }
+// COMMANDS
+client.on("messageCreate", async msg => {
+  if (msg.author.bot || !msg.content.startsWith(prefix)) return;
+  const args = msg.content.slice(prefix.length).trim().split(/\s+/);
+  const cmd = args.shift()?.toLowerCase();
 
-  // Version command
-  if (command === 'version') {
-    const reply =
-      `💀 **${versionData.name}**\n` +
-      `🧾 Version: **${versionData.version}** — *${versionData.codename}*\n` +
-      `📅 Released: ${versionData.release_date}\n` +
-      `🧠 Framework: ${versionData.framework}\n` +
-      `💾 Database: ${versionData.database}\n` +
-      `⚙️ License: ${versionData.license}`;
-    return message.reply(reply);
-  }
+  try {
+    // version
+    if (cmd === "version")
+      return msg.reply(
+        `💀 **${versionData.name}** v${versionData.version}\n🧾 ${versionData.codename}\n📅 ${versionData.release_date}`
+      );
 
-  // Purge setup
-  if (command === 'p' && !args[0]) {
-    const channels = message.guild.channels.cache
-      .filter(c => c.isTextBased() && c.viewable)
-      .map(c => ({ label: `#${c.name}`, value: c.id }));
+    // status
+    if (cmd === "p" && args[0] === "status") {
+      const res = await db.query("SELECT * FROM purge_configs WHERE guild_id=$1 AND active=true", [msg.guild.id]);
+      if (!res.rowCount) return msg.reply("💤 No active purges.");
+      const list = res.rows
+        .map(r => `#${msg.guild.channels.cache.get(r.channel_id)?.name} → ${r.media_types.join(", ")} every ${r.interval_ms / 1000}s`)
+        .join("\n");
+      return msg.reply({ embeds: [new EmbedBuilder().setColor(0xff0000).setTitle("💀 Active Purges").setDescription(list)] });
+    }
 
-    const channelMenu = new StringSelectMenuBuilder()
-      .setCustomId('select_channel')
-      .setPlaceholder('Select a channel to purge')
-      .addOptions(channels.slice(0, 25));
+    // stop
+    if (cmd === "p" && args[0] === "stop") {
+      await db.query("UPDATE purge_configs SET active=false WHERE channel_id=$1", [msg.channel.id]);
+      clearInterval(purgeTasks.get(msg.channel.id));
+      purgeTasks.delete(msg.channel.id);
+      return msg.reply("🛑 Purge stopped for this channel.");
+    }
 
-    const row = new ActionRowBuilder().addComponents(channelMenu);
-    await message.reply({ content: '📂 Choose a channel to begin The Purge:', components: [row] });
-  }
-});
+    // setup
+    if (cmd === "p" && !args[0]) {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle("💀 The Purge Setup Wizard")
+        .setDescription(
+          "We'll set up a purge task in four steps:\n" +
+          "1️⃣ Channel\n2️⃣ Interval\n3️⃣ Media types\n4️⃣ Target user (optional)\n\nType `cancel` anytime to stop."
+        );
+      await msg.reply({ embeds: [embed] });
 
-// --- INTERACTIONS ---
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isStringSelectMenu()) return;
+      const collected = {};
 
-  // Channel select
-  if (interaction.customId === 'select_channel') {
-    const channelId = interaction.values[0];
-    const intervalMenu = new StringSelectMenuBuilder()
-      .setCustomId(`select_interval:${channelId}`)
-      .setPlaceholder('Select purge interval')
-      .addOptions([
-        { label: 'Every 30 seconds', value: '30s' },
-        { label: 'Every 5 minutes', value: '5m' },
-        { label: 'Every 1 hour', value: '1h' },
-        { label: 'Every 1 day', value: '1d' },
-      ]);
-    const row = new ActionRowBuilder().addComponents(intervalMenu);
-    await interaction.update({ content: '⏱️ Choose purge interval:', components: [row] });
-  }
+      // Step 1: Channel
+      collected.channelId = await collectInput(
+        msg.channel,
+        msg.author.id,
+        "📂 Please mention the channel or type its name:",
+        async input => {
+          const ch = msg.mentions.channels.first() || msg.guild.channels.cache.find(c => c.name === input.replace("#", ""));
+          return ch?.isTextBased() ? ch.id : null;
+        }
+      );
 
-  // Interval select
-  if (interaction.customId.startsWith('select_interval')) {
-    const [_, channelId] = interaction.customId.split(':');
-    const intervalValue = interaction.values[0];
-    const mediaMenu = new StringSelectMenuBuilder()
-      .setCustomId(`select_media:${channelId}:${intervalValue}`)
-      .setPlaceholder('Select media types to purge')
-      .setMinValues(1)
-      .setMaxValues(5)
-      .addOptions([
-        { label: 'All Media', value: 'all' },
-        { label: 'Attachments', value: 'attachments' },
-        { label: 'GIFs', value: 'gifs' },
-        { label: 'Stickers', value: 'stickers' },
-        { label: 'Emojis', value: 'emojis' },
-      ]);
-    const row = new ActionRowBuilder().addComponents(mediaMenu);
-    await interaction.update({ content: '🧩 Choose what The Purge should remove:', components: [row] });
-  }
+      // Step 2: Interval
+      collected.intervalMs = await collectInput(
+        msg.channel,
+        msg.author.id,
+        "⏱️ Enter interval (e.g., 30s, 5m, 1h, 1d):",
+        async input => parseInterval(input)
+      );
 
-  // Media type select
-  if (interaction.customId.startsWith('select_media')) {
-    const [_, channelId, intervalValue] = interaction.customId.split(':');
-    const mediaTypes = interaction.values;
-    const channel = await interaction.guild.channels.fetch(channelId);
-    const ms = parseInterval(intervalValue);
+      // Step 3: Media types
+      collected.mediaTypes = await collectInput(
+        msg.channel,
+        msg.author.id,
+        "🧩 Enter media types (comma separated: attachments,gifs,stickers,emojis,all):",
+        async input => {
+          const parts = input.split(",").map(t => t.trim().toLowerCase());
+          const valid = ["attachments", "gifs", "stickers", "emojis", "all"];
+          return parts.every(p => valid.includes(p)) ? parts : null;
+        }
+      );
 
-    await db.query(
-      `INSERT INTO purge_configs (guild_id, channel_id, interval_ms, media_types, active)
-       VALUES ($1, $2, $3, $4, true)
-       ON CONFLICT (channel_id) DO UPDATE
-       SET interval_ms = EXCLUDED.interval_ms, media_types = EXCLUDED.media_types, active = true`,
-      [interaction.guild.id, channelId, ms, mediaTypes]
-    );
+      // Step 4: Target user (optional)
+      collected.userId = await collectInput(
+        msg.channel,
+        msg.author.id,
+        "👤 Mention a user to target (or type 'none'):",
+        async input => {
+          if (input.toLowerCase() === "none") return null;
+          const user = msg.mentions.users.first() || msg.guild.members.cache.find(m => m.user.username === input)?.user;
+          return user?.id || null;
+        }
+      ).catch(() => null);
 
-    if (purgeTasks.has(channelId)) clearInterval(purgeTasks.get(channelId));
-    startPurgeTask(interaction.guild.id, channelId, ms, mediaTypes);
+      await db.query(
+        `INSERT INTO purge_configs (guild_id, channel_id, interval_ms, media_types, user_id, active)
+         VALUES ($1,$2,$3,$4,$5,true)
+         ON CONFLICT (channel_id) DO UPDATE SET interval_ms=EXCLUDED.interval_ms, media_types=EXCLUDED.media_types, user_id=EXCLUDED.user_id, active=true`,
+        [msg.guild.id, collected.channelId, collected.intervalMs, collected.mediaTypes, collected.userId]
+      );
 
-    await interaction.update({ content: `💀 The Purge is active in ${channel} every ${intervalValue}.`, components: [] });
+      if (purgeTasks.has(collected.channelId))
+        clearInterval(purgeTasks.get(collected.channelId));
+
+      startTask(msg.guild.id, collected.channelId, collected.intervalMs, collected.mediaTypes, collected.userId);
+
+      const confirm = new EmbedBuilder()
+        .setColor(0x00ff00)
+        .setTitle("✅ Purge Task Created")
+        .setDescription(
+          `Channel: <#${collected.channelId}>\nInterval: ${collected.intervalMs / 1000}s\nMedia: ${collected.mediaTypes.join(", ")}\nUser: ${
+            collected.userId ? `<@${collected.userId}>` : "None"
+          }`
+        );
+      return msg.reply({ embeds: [confirm] });
+    }
+  } catch (err) {
+    if (err.message === "cancelled") return msg.reply("❌ Setup cancelled.");
+    if (err.message === "too many attempts") return msg.reply("🚫 Too many invalid attempts. Setup aborted.");
+    console.error("⚠️ Command error:", err);
+    return msg.reply("💥 An unexpected error occurred. Please try again.");
   }
 });
 
