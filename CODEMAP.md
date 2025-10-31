@@ -1,5 +1,5 @@
 # 🧭 Code Map (Auto Updated)
-> Generated automatically on Fri Oct 31 04:23:00 UTC 2025
+> Generated automatically on Fri Oct 31 04:26:15 UTC 2025
 
 ## 📂 Repository Structure
 .
@@ -16,7 +16,7 @@
 2 directories, 8 files
 
 ## 🧾 Version Info
-Version: 1.0.7
+Version: 1.0.8
 Codename: The First Purge
 Release Date: 2025-10-31
 
