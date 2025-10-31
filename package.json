@@ -1,29 +1,15 @@
 {
   "name": "thepurge",
   "version": "3.0.0",
-  "description": "💀 A Discord bot that auto-purges media, attachments, GIFs, stickers, and emojis on a schedule.",
-  "type": "module",
+  "description": "Discord purge automation bot with slash command menus",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
-  "keywords": [
-    "discord",
-    "discord-bot",
-    "purge",
-    "moderation",
-    "railway",
-    "postgres"
-  ],
-  "author": "The Purge Team",
-  "license": "MIT",
   "dependencies": {
     "discord.js": "^14.16.3",
-    "pg": "^8.12.0",
-    "dotenv": "^16.4.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.1"
   }
 }
