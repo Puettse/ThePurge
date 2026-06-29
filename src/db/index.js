@@ -16,6 +16,19 @@ function getSslConfig(connectionString) {
 
 export async function migrate(db) {
   await db.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'purge_configs'
+        AND column_name = 'media_types'
+      ) THEN
+        ALTER TABLE purge_configs RENAME COLUMN media_types TO media_type;
+      END IF;
+    END$$;
+  `);
+
+  await db.query(`
     CREATE TABLE IF NOT EXISTS guilds (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
