@@ -1,6 +1,5 @@
 import { ensureGuild, isModuleEnabled } from '../db/index.js';
 import { handleInteraction } from './interactions.js';
-import { runAutomod } from '../services/automodService.js';
 import { renderTemplate } from '../services/templateEngine.js';
 
 export function wireDiscordEvents(context) {
@@ -38,18 +37,21 @@ export function wireDiscordEvents(context) {
   });
 
   client.on('messageCreate', async (message) => {
-    await runAutomod(context, message);
-    await handleCustomCommand(context, message);
-    await handleLeveling(context, message);
+    await runEventFeature(context, 'automod', async () => {
+      const { runAutomod } = await import('../services/automodService.js');
+      await runAutomod(context, message);
+    });
+    await runEventFeature(context, 'customCommands', () => handleCustomCommand(context, message));
+    await runEventFeature(context, 'levels', () => handleLeveling(context, message));
   });
 
   client.on('guildMemberAdd', async (member) => {
-    await handleWelcome(context, member);
-    await handleJoinRole(context, member);
+    await runEventFeature(context, 'welcome', () => handleWelcome(context, member));
+    await runEventFeature(context, 'autoroles', () => handleJoinRole(context, member));
   });
 
   client.on('guildMemberRemove', async (member) => {
-    await handleLeave(context, member);
+    await runEventFeature(context, 'welcome', () => handleLeave(context, member));
   });
 
   client.on('messageDelete', async (message) => {
@@ -65,12 +67,24 @@ export function wireDiscordEvents(context) {
   });
 
   client.on('messageReactionAdd', async (reaction, user) => {
-    await handleReactionRole(context, reaction, user, 'add');
+    await runEventFeature(context, 'reactionRoles', () => handleReactionRole(context, reaction, user, 'add'));
   });
 
   client.on('messageReactionRemove', async (reaction, user) => {
-    await handleReactionRole(context, reaction, user, 'remove');
+    await runEventFeature(context, 'reactionRoles', () => handleReactionRole(context, reaction, user, 'remove'));
   });
+}
+
+async function runEventFeature(context, featureName, task) {
+  try {
+    await task();
+  } catch (error) {
+    console.error(`[event:${featureName}] failed`, error);
+    context.liveFeed.publish('discord.event_feature_failed', {
+      featureName,
+      error: String(error?.message || error),
+    }, 'error');
+  }
 }
 
 async function handleCustomCommand(context, message) {

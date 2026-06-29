@@ -2,6 +2,19 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.2.0] - 2026-06-28
+
+### Added
+
+- Added explicit module isolation documentation to README.
+
+### Changed
+
+- Split Discord command handling into lazy-loaded feature modules under `src/bot/handlers/`.
+- Split dashboard API handling into lazy-loaded feature route modules under `src/web/routes/modules/`.
+- Changed Discord event processing so AutoMod, custom commands, leveling, welcome, autoroles, and reaction roles fail independently.
+- Changed dashboard overview loading so individual section failures are reported in `sectionErrors` instead of failing the whole overview response.
+
 ## [4.1.0] - 2026-06-28
 
 ### Added

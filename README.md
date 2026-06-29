@@ -14,6 +14,17 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Server-side dashboard access filtering to guilds where the logged-in Discord user can manage the server.
 - Server-sent live feed for bot status, audit events, errors, dashboard events, and scheduler events.
 - Ticketing control inspired by ticket panel workflows: panel creation, private ticket channels, staff roles, claim, close, and stored transcripts.
+- Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
+
+## Module Isolation Rule
+
+No feature should be so tightly coupled to another feature that one outage takes unrelated capability down with it.
+
+- Discord command handlers live under `src/bot/handlers/` and are loaded by command name.
+- Dashboard module APIs live under `src/web/routes/modules/` and are loaded behind route boundaries.
+- Event-driven features such as AutoMod, custom commands, leveling, welcome, autoroles, and reaction roles run independently.
+- Dashboard overview data returns `sectionErrors` when one section fails instead of failing the whole dashboard.
+- Shared services are allowed for cross-cutting concerns such as database access, audit events, permissions, templates, and live feed, but feature code must not import another feature module directly.
 
 ## Commands
 

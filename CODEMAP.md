@@ -18,7 +18,8 @@ Last updated: 2026-06-28
 - `src/bot/commands.js` defines public slash commands.
 - `src/bot/registerCommands.js` registers global application commands.
 - `src/bot/events.js` wires guild, message, member, reaction, and interaction handlers.
-- `src/bot/interactions.js` handles slash commands and ticket buttons.
+- `src/bot/interactions.js` routes interactions through lazy-loaded feature handlers.
+- `src/bot/handlers/` contains independently loaded command modules for setup, moderation, automation, logs, engagement, and tickets.
 
 ## Services
 
@@ -37,6 +38,8 @@ Last updated: 2026-06-28
 - `src/web/server.js` serves static dashboard files and JSON/SSE APIs.
 - `src/web/auth.js` handles Discord OAuth and signed HTTP-only dashboard sessions.
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
+- `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
+- `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, and tickets.
 - `public/index.html`, `public/styles.css`, and `public/app.js` implement the browser control panel.
 
 ## Scripts and Tests
@@ -47,7 +50,8 @@ Last updated: 2026-06-28
 
 ## Important Operational Notes
 
-- The local folder is not currently a Git checkout.
+- The local folder is a Git checkout on branch `codex/all-in-one-dashboard-ticketing`.
 - Runtime requires `BOT_TOKEN`, `CLIENT_ID`, and `DATABASE_URL`.
 - Dashboard OAuth requires `CLIENT_SECRET`, `PUBLIC_BASE_URL`, and `SESSION_SECRET`.
 - Full validation requires successful npm dependency installation.
+- Feature modules should not import other feature modules directly; use shared services for cross-cutting behavior.

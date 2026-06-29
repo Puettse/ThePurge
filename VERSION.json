@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.1.0",
-  "codename": "Control Panel",
+  "version": "4.2.0",
+  "codename": "Isolation Grid",
   "release_date": "2026-06-28",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -11,8 +11,9 @@
   "runtime": "Node.js >=20",
   "repository": "https://github.com/Puettse/ThePurge",
   "highlights": [
-    "Modular Discord command and event architecture",
+    "Lazy-loaded Discord command modules with feature-level failure boundaries",
     "Built-in Express dashboard and Discord OAuth login",
+    "Lazy-loaded dashboard route modules with per-module outage responses",
     "Live dashboard feed using server-sent events",
     "PostgreSQL-backed guild settings, modules, audit logs, scheduler, custom commands, ticketing, levels, and economy",
     "Ticket panel, private ticket channel, claim, close, and transcript workflow"
