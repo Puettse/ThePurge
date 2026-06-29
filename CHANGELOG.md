@@ -7,6 +7,7 @@ All notable changes to ThePurge are documented here.
 ### Added
 
 - Added explicit module isolation documentation to README.
+- Added `railway.json` config-as-code with start command, health check, and bounded restart policy.
 
 ### Changed
 

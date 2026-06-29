@@ -63,6 +63,13 @@ Dashboard OAuth callback URL:
 https://your-railway-domain.up.railway.app/auth/callback
 ```
 
+Railway deployment config is pinned in `railway.json`:
+
+- Builder: Railpack
+- Start command: `npm start`
+- Health check: `/health`
+- Restart policy: `ON_FAILURE` with bounded retries
+
 ## Local Commands
 
 ```bash

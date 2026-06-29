@@ -11,6 +11,7 @@ Last updated: 2026-06-28
 
 - `src/config.js` reads Railway/Discord/PostgreSQL environment variables.
 - `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
+- `railway.json` pins Railway build/deploy config, health check, and restart policy.
 
 ## Discord Bot
 
