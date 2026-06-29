@@ -60,10 +60,10 @@ export async function runModerationAction(context, options) {
 export async function purgeChannelMessages(context, options) {
   const { db, audit } = context;
   const { interaction, channel, mediaType = 'all', limit = 100, reason = 'Manual purge' } = options;
-  const messages = await channel.messages.fetch({ limit: Math.min(Math.max(limit, 1), 100) });
+  assertCanManageMessages(channel, context.client.user);
+  const messages = await fetchMessagesForPurge(channel, limit);
   const filtered = messages.filter((message) => matchesMediaType(message, mediaType));
-  const deleted = await Promise.allSettled(filtered.map((message) => message.delete()));
-  const deletedCount = deleted.filter((item) => item.status === 'fulfilled').length;
+  const result = await deleteMessagesIndividually(filtered);
 
   await db.query(
     `
@@ -83,23 +83,26 @@ export async function purgeChannelMessages(context, options) {
     targetId: channel.id,
     action: 'moderation.purge',
     source: 'discord',
-    details: { mediaType, requestedLimit: limit, deletedCount, reason },
+    details: {
+      mediaType,
+      requestedLimit: limit,
+      inspectedCount: messages.length,
+      matchedCount: filtered.length,
+      deletedCount: result.deletedCount,
+      failedCount: result.failedCount,
+      reason,
+    },
   });
 
-  return { deletedCount, inspectedCount: messages.size };
+  return {
+    ...result,
+    inspectedCount: messages.length,
+    matchedCount: filtered.length,
+  };
 }
-
-export function matchesMediaType(message, mediaType) {
-  if (mediaType === 'all') {
-    return message.attachments.size > 0
-      || message.stickers.size > 0
-      || /<a?:\w+:\d+>/.test(message.content || '')
-      || /(tenor\.com|giphy\.com|\.gif\b)/i.test(message.content || '');
-  }
-
-  if (mediaType === 'attachments') return message.attachments.size > 0;
-  if (mediaType === 'stickers') return message.stickers.size > 0;
-  if (mediaType === 'emojis') return /<a?:\w+:\d+>/.test(message.content || '');
-  if (mediaType === 'gifs') return /(tenor\.com|giphy\.com|\.gif\b)/i.test(message.content || '');
-  return false;
-}
+import {
+  assertCanManageMessages,
+  deleteMessagesIndividually,
+  fetchMessagesForPurge,
+  matchesMediaType,
+} from './mediaService.js';

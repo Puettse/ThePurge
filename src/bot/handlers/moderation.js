@@ -19,7 +19,10 @@ export async function handlePurge(context, interaction) {
   const limit = interaction.options.getInteger('limit') || 100;
   const result = await purgeChannelMessages(context, { interaction, channel, mediaType, limit });
 
-  await interaction.editReply(`Inspected ${result.inspectedCount} messages and deleted ${result.deletedCount}.`);
+  const failureText = result.failedCount > 0 ? ` ${result.failedCount} deletes failed.` : '';
+  await interaction.editReply(
+    `Inspected ${result.inspectedCount} messages, matched ${result.matchedCount}, and deleted ${result.deletedCount}.${failureText}`,
+  );
 }
 
 export async function handleMod(context, interaction) {

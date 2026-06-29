@@ -83,6 +83,12 @@ export async function migrate(db) {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    DELETE FROM purge_configs newer
+    USING purge_configs older
+    WHERE newer.guild_id = older.guild_id
+      AND newer.channel_id = older.channel_id
+      AND newer.id > older.id;
+
     CREATE UNIQUE INDEX IF NOT EXISTS purge_configs_guild_channel_idx
       ON purge_configs(guild_id, channel_id);
 
@@ -207,6 +213,25 @@ export async function migrate(db) {
       updated_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (guild_id, user_id)
     );
+
+    INSERT INTO scheduled_jobs (guild_id, channel_id, job_type, payload, interval_seconds, next_run_at)
+    SELECT
+      purge_configs.guild_id,
+      purge_configs.channel_id,
+      'purge',
+      jsonb_build_object('mediaType', purge_configs.media_type, 'limit', 100),
+      purge_configs.interval_seconds,
+      NOW() + (purge_configs.interval_seconds::int * INTERVAL '1 second')
+    FROM purge_configs
+    WHERE purge_configs.interval_seconds > 0
+      AND NOT EXISTS (
+        SELECT 1
+        FROM scheduled_jobs
+        WHERE scheduled_jobs.guild_id = purge_configs.guild_id
+          AND scheduled_jobs.channel_id = purge_configs.channel_id
+          AND scheduled_jobs.job_type = 'purge'
+          AND scheduled_jobs.enabled = TRUE
+      );
   `);
 }
 

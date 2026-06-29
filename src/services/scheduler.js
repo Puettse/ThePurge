@@ -61,7 +61,8 @@ async function runJob(context, job) {
     }
 
     if (job.job_type === 'purge') {
-      await purgeScheduledChannel(context, job);
+      const result = await purgeScheduledChannel(context, job);
+      payload.result = result;
     }
 
     await context.db.query(
@@ -80,7 +81,7 @@ async function runJob(context, job) {
       targetId: job.channel_id,
       action: `scheduler.${job.job_type}`,
       source: 'scheduler',
-      details: { jobId: job.id },
+      details: { jobId: job.id, result: payload.result || null },
     });
   } catch (error) {
     await context.audit.record({

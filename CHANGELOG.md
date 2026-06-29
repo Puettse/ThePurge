@@ -2,6 +2,21 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.0] - 2026-06-28
+
+### Added
+
+- Added `/schedule purge` for recurring media purges.
+- Added migration from legacy `purge_configs.interval_seconds` rows into scheduled purge jobs.
+- Added dedupe migration before the `(guild_id, channel_id)` purge config unique index.
+- Added shared `mediaService` for media matching, purge pagination, delete counting, and Manage Messages permission checks.
+- Added tests for scheduled purge command registration, GIF embed matching, and paginated message fetches.
+
+### Changed
+
+- Changed manual purge output to report inspected, matched, deleted, and failed counts.
+- Changed scheduled purge to use the shared media service instead of depending on moderation feature internals.
+
 ## [4.2.0] - 2026-06-28
 
 ### Added

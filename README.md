@@ -15,6 +15,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Server-sent live feed for bot status, audit events, errors, dashboard events, and scheduler events.
 - Ticketing control inspired by ticket panel workflows: panel creation, private ticket channels, staff roles, claim, close, and stored transcripts.
 - Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
+- Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
 
 ## Module Isolation Rule
 

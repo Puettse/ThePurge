@@ -21,3 +21,10 @@ test('all planned public commands are registered', () => {
     'welcome',
   ]);
 });
+
+test('schedule command includes recurring purge support', () => {
+  const schedule = commandData.find((command) => command.name === 'schedule');
+  const subcommands = schedule.options.map((option) => option.name).sort();
+
+  assert.deepEqual(subcommands, ['list', 'message', 'purge']);
+});

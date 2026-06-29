@@ -128,7 +128,9 @@ export async function handleSchedule(context, interaction) {
     return;
   }
 
-  if (interaction.options.getSubcommand() === 'message') {
+  const subcommand = interaction.options.getSubcommand();
+
+  if (subcommand === 'message') {
     const channel = interaction.options.getChannel('channel', true);
     const message = interaction.options.getString('message', true);
     const intervalSeconds = interaction.options.getInteger('interval-seconds', true);
@@ -140,6 +142,39 @@ export async function handleSchedule(context, interaction) {
       [interaction.guild.id, channel.id, JSON.stringify({ message }), intervalSeconds],
     );
     await interaction.reply({ content: `Scheduled message created for ${channel}.`, ephemeral: true });
+    return;
+  }
+
+  if (subcommand === 'purge') {
+    const channel = interaction.options.getChannel('channel', true);
+    const intervalSeconds = interaction.options.getInteger('interval-seconds', true);
+    const mediaType = interaction.options.getString('media') || 'all';
+    const limit = interaction.options.getInteger('limit') || 100;
+
+    await context.db.query(
+      `
+      INSERT INTO scheduled_jobs (guild_id, channel_id, job_type, payload, interval_seconds, next_run_at)
+      VALUES ($1, $2, 'purge', $3, $4, NOW() + ($4::int * INTERVAL '1 second'));
+      `,
+      [interaction.guild.id, channel.id, JSON.stringify({ mediaType, limit }), intervalSeconds],
+    );
+
+    await context.db.query(
+      `
+      INSERT INTO purge_configs (guild_id, channel_id, media_type, interval_seconds, updated_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (guild_id, channel_id) DO UPDATE SET
+        media_type = EXCLUDED.media_type,
+        interval_seconds = EXCLUDED.interval_seconds,
+        updated_at = NOW();
+      `,
+      [interaction.guild.id, channel.id, mediaType, intervalSeconds],
+    );
+
+    await interaction.reply({
+      content: `Scheduled ${mediaType} purge for ${channel} every ${intervalSeconds} seconds.`,
+      ephemeral: true,
+    });
     return;
   }
 

@@ -29,6 +29,7 @@ Last updated: 2026-06-28
 - `src/services/templateEngine.js` renders safe variables for custom commands, welcome messages, schedules, and logs.
 - `src/services/permissionService.js` centralizes Discord permission and role-hierarchy checks.
 - `src/services/moderationService.js` runs moderation actions and media purge filtering.
+- `src/services/mediaService.js` owns media matching, paginated message fetches, Manage Messages permission checks, and deletion result counts.
 - `src/services/automodService.js` evaluates message events against stored automation rules.
 - `src/services/scheduler.js` runs recurring message and purge jobs.
 - `src/services/schedulerTasks.js` contains scheduler task helpers.

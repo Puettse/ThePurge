@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.2.0",
-  "codename": "Isolation Grid",
+  "version": "4.3.0",
+  "codename": "Purge Integrity",
   "release_date": "2026-06-28",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -16,7 +16,9 @@
     "Lazy-loaded dashboard route modules with per-module outage responses",
     "Live dashboard feed using server-sent events",
     "PostgreSQL-backed guild settings, modules, audit logs, scheduler, custom commands, ticketing, levels, and economy",
-    "Ticket panel, private ticket channel, claim, close, and transcript workflow"
+    "Ticket panel, private ticket channel, claim, close, and transcript workflow",
+    "Scheduled purge command support and legacy interval migration",
+    "Shared media purge service with permission checks, pagination, and honest delete counts"
   ],
   "next": [
     "Validate live Railway OAuth callback and deployment variables",

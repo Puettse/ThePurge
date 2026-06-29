@@ -31,9 +31,9 @@ export const commandData = [
       ))
     .addIntegerOption((option) => option
       .setName('limit')
-      .setDescription('Messages to inspect, maximum 100')
+      .setDescription('Messages to inspect, maximum 500')
       .setMinValue(1)
-      .setMaxValue(100)
+      .setMaxValue(500)
       .setRequired(false)),
   new SlashCommandBuilder()
     .setName('mod')
@@ -131,6 +131,36 @@ export const commandData = [
         .setRequired(true))
       .addStringOption((option) => option.setName('message').setDescription('Message template').setRequired(true))
       .addIntegerOption((option) => option.setName('interval-seconds').setDescription('Interval in seconds').setMinValue(60).setRequired(true)))
+    .addSubcommand((command) => command
+      .setName('purge')
+      .setDescription('Schedule recurring media purges.')
+      .addChannelOption((option) => option
+        .setName('channel')
+        .setDescription('Target channel')
+        .addChannelTypes(ChannelType.GuildText)
+        .setRequired(true))
+      .addIntegerOption((option) => option
+        .setName('interval-seconds')
+        .setDescription('Interval in seconds')
+        .setMinValue(60)
+        .setRequired(true))
+      .addStringOption((option) => option
+        .setName('media')
+        .setDescription('Media type to purge')
+        .setRequired(false)
+        .addChoices(
+          { name: 'All media', value: 'all' },
+          { name: 'Attachments', value: 'attachments' },
+          { name: 'GIFs', value: 'gifs' },
+          { name: 'Stickers', value: 'stickers' },
+          { name: 'Emojis', value: 'emojis' },
+        ))
+      .addIntegerOption((option) => option
+        .setName('limit')
+        .setDescription('Messages to inspect, maximum 500')
+        .setMinValue(1)
+        .setMaxValue(500)
+        .setRequired(false)))
     .addSubcommand((command) => command
       .setName('list')
       .setDescription('List active jobs.')),
