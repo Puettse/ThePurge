@@ -9,25 +9,16 @@ import { createScheduler } from './services/scheduler.js';
 import { createDashboardServer } from './web/server.js';
 
 export async function startApplication() {
-  const config = loadConfig();
-  const db = createDb(config.databaseUrl);
+  const config = loadConfig(process.env, { allowPartial: true });
   const liveFeed = createLiveFeed();
-  const audit = createAuditService({ db, liveFeed });
-
-  await db.connect();
-  await migrate(db);
-
   const client = createDiscordClient();
-  const context = { config, db, client, liveFeed, audit };
-
-  wireDiscordEvents(context);
-  await registerCommands(context);
-
+  const runtime = {
+    database: { connected: false, error: null },
+    discord: { commandsRegistered: false, loggedIn: false, error: null },
+  };
+  const context = { config, db: null, client, liveFeed, audit: null, runtime };
   const dashboard = createDashboardServer(context);
-  const scheduler = createScheduler(context);
-
-  await client.login(config.botToken);
-  scheduler.start();
+  let scheduler = null;
 
   dashboard.listen(config.port, () => {
     const message = `[dashboard] Listening on port ${config.port}`;
@@ -35,13 +26,61 @@ export async function startApplication() {
     liveFeed.publish('dashboard.ready', { message, port: config.port });
   });
 
+  if (config.missingRequired.length > 0) {
+    const message = `Missing required environment variables: ${config.missingRequired.join(', ')}`;
+    console.error(`[config] ${message}`);
+    liveFeed.publish('system.config_missing', { missing: config.missingRequired }, 'error');
+    registerShutdownHandlers({ dashboard, scheduler, client, db: null, liveFeed });
+    return;
+  }
+
+  const db = createDb(config.databaseUrl);
+  context.db = db;
+
+  try {
+    await db.connect();
+    runtime.database.connected = true;
+    await migrate(db);
+  } catch (error) {
+    runtime.database.connected = false;
+    runtime.database.error = String(error?.message || error);
+    console.error('[database] Failed to initialize', error);
+    liveFeed.publish('database.error', { error: runtime.database.error }, 'error');
+    registerShutdownHandlers({ dashboard, scheduler, client, db, liveFeed });
+    return;
+  }
+
+  const audit = createAuditService({ db, liveFeed });
+  context.audit = audit;
+
+  wireDiscordEvents(context);
+  try {
+    await registerCommands(context);
+    runtime.discord.commandsRegistered = true;
+    await client.login(config.botToken);
+    runtime.discord.loggedIn = true;
+  } catch (error) {
+    runtime.discord.error = String(error?.message || error);
+    console.error('[discord] Failed to initialize', error);
+    liveFeed.publish('discord.error', { error: runtime.discord.error }, 'error');
+    registerShutdownHandlers({ dashboard, scheduler, client, db, liveFeed });
+    return;
+  }
+
+  scheduler = createScheduler(context);
+  scheduler.start();
+
+  registerShutdownHandlers({ dashboard, scheduler, client, db, liveFeed });
+}
+
+function registerShutdownHandlers({ dashboard, scheduler, client, db, liveFeed }) {
   const shutdown = async (signal) => {
     console.log(`[shutdown] Received ${signal}`);
     liveFeed.publish('system.shutdown', { signal });
-    scheduler.stop();
+    scheduler?.stop();
     dashboard.close();
     client.destroy();
-    await db.end();
+    if (db) await db.end().catch(() => null);
     process.exit(0);
   };
 

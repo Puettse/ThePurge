@@ -2,6 +2,14 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.1] - 2026-06-28
+
+### Fixed
+
+- Fixed local and Railway dashboard startup so the web UI binds before Discord and PostgreSQL initialization.
+- Added degraded `/health` and `/api/health` reporting for missing config, database errors, and Discord startup errors.
+- Added a regression test for dashboard health when required environment variables are missing.
+
 ## [4.3.0] - 2026-06-28
 
 ### Added

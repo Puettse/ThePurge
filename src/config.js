@@ -4,9 +4,9 @@ dotenv.config();
 
 const required = ['BOT_TOKEN', 'DATABASE_URL', 'CLIENT_ID'];
 
-export function loadConfig(env = process.env) {
+export function loadConfig(env = process.env, options = {}) {
   const missing = required.filter((key) => !env[key]);
-  if (missing.length > 0) {
+  if (missing.length > 0 && !options.allowPartial) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
@@ -15,12 +15,13 @@ export function loadConfig(env = process.env) {
     databaseUrl: env.DATABASE_URL,
     clientId: env.CLIENT_ID,
     clientSecret: env.CLIENT_SECRET || '',
-    sessionSecret: env.SESSION_SECRET || env.BOT_TOKEN,
+    sessionSecret: env.SESSION_SECRET || env.BOT_TOKEN || 'local-dashboard-session-secret',
     publicBaseUrl: env.PUBLIC_BASE_URL || env.RAILWAY_PUBLIC_DOMAIN
       ? normalizeBaseUrl(env.PUBLIC_BASE_URL || `https://${env.RAILWAY_PUBLIC_DOMAIN}`)
       : '',
     port: Number.parseInt(env.PORT || '3000', 10),
     nodeEnv: env.NODE_ENV || 'development',
+    missingRequired: missing,
   };
 }
 
