@@ -1,95 +1,45 @@
-# 🧾 Changelog  
-> All notable changes to **The Purge** Discord bot will be documented here.  
-> This project follows [Semantic Versioning](https://semver.org/).  
+# Changelog
 
----
+All notable changes to ThePurge are documented here.
 
-## [1.0.0] - 2025-10-30  
-💀 **Initial Release — “The First Purge”**
+## [4.1.0] - 2026-06-28
 
-### ✨ Features
-- Added interactive setup command `,p`  
-  - Select target channel  
-  - Choose purge interval (seconds, minutes, hours, days)  
-  - Choose media type (attachments, GIFs, stickers, emojis, all)
-- Added `,p stop` command to disable purge on a channel
-- Integrated **PostgreSQL** for persistent configuration (via Railway)
-- Auto-restores purge tasks on restart
-- Uses **discord.js v14** for full compatibility with new Discord API
-- Full console logging with purge summaries and status messages
-- MIT Licensed, open-source friendly
+### Added
 
-### 🧰 Tech Stack
-- Node.js  
-- discord.js v14  
-- PostgreSQL (pg)  
-- Railway deployment  
+- Added built-in Express dashboard/control panel hosted by the same Railway service.
+- Added Discord OAuth dashboard login with guild management filtering.
+- Added server-sent live feed for bot health, audit events, errors, scheduler activity, and dashboard changes.
+- Added modular Discord bot architecture with command registry, event handlers, service layer, database migration, scheduler, and dashboard API.
+- Added moderation commands for purge, warn, timeout, kick, and ban.
+- Added AutoMod rule storage and message-event enforcement for invite links, links, blocked words, attachments, and mention limits.
+- Added shared audit log table and moderation case tracking.
+- Added custom command storage and template rendering.
+- Added welcome/leave message configuration.
+- Added autorole and reaction-role persistence.
+- Added scheduled message and scheduled purge job support.
+- Added leveling and starter economy account tables and commands.
+- Added ticketing control with ticket panels, private ticket channels, staff role access, claim, close, and transcript storage.
+- Added `.env.example` and focused node:test coverage for template rendering, live feed behavior, command names, and media matching.
 
----
+### Changed
 
-## [1.0.1] - *Upcoming*  
-💡 **Planned Enhancements**
+- Replaced the single-file bot implementation with a modular `src/` architecture.
+- Updated package metadata from purge-only bot to all-in-one bot.
+- Updated README and CODEMAP to describe the new runtime.
 
-### 🔧 Improvements
-- Add user-specific filtering (purge media from a selected user only)
-- Add status command (` ,p status `)
-- Add optional audit logging (record what gets purged)
-- Add error handling for missing permissions
+### Security
 
----
+- Dashboard sessions use HTTP-only cookies.
+- Dashboard API filters guild access to Discord guilds where the logged-in user has owner, Administrator, or Manage Server access.
+- Custom command rendering suppresses `@everyone` and `@here` unless explicitly allowed.
 
-## 🕒 Version History
-| Version | Codename | Date | Notes |
-|----------|-----------|------|-------|
-| 1.0.0 | The First Purge | 2025-10-30 | Initial stable release |
+### Known Issues
 
----
+- Full dashboard OAuth validation requires live Railway variables and Discord application callback configuration.
+- Full Discord ticketing validation requires a test server where the bot has channel, role, and moderation permissions.
 
-### 🧑‍💻 Maintainer
-**Code Copilot**  
-*“Clean servers, clean conscience.”*
-## [1.0.1] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.1
+## [1.0.0] - 2025-10-30
 
-## [1.0.2] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.2
+### Added
 
-## [1.0.3] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.3
-
-## [1.0.4] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.4
-
-## [1.0.5] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.5
-
-## [1.0.6] - 2025-10-30
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.6
-
-## [1.0.7] - 2025-10-31
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.7
-
-## [1.0.8] - 2025-10-31
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.8
-
-## [1.0.9] - 2025-10-31
-✨ Automated update
-- CODEMAP.md refreshed
-- VERSION.json bumped to 1.0.9
-
+- Initial purge-focused Discord bot baseline.

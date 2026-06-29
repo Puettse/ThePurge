@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ThePurge Control Panel</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>ThePurge Control Panel</h1>
+        <p id="status">Loading status...</p>
+      </div>
+      <div class="actions">
+        <a class="button" href="/auth/login" id="loginButton">Discord Login</a>
+        <button id="logoutButton" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <h2>Servers</h2>
+        <div id="guildList" class="list"></div>
+      </aside>
+
+      <section class="workspace">
+        <section class="panel">
+          <h2>Modules</h2>
+          <div id="modules" class="modules"></div>
+        </section>
+
+        <section class="panel grid">
+          <form id="settingsForm">
+            <h2>Settings</h2>
+            <label>Prefix <input name="prefix" maxlength="4"></label>
+            <label>Log Channel ID <input name="logChannelId"></label>
+            <label>Welcome Channel ID <input name="welcomeChannelId"></label>
+            <label>Welcome Message <textarea name="welcomeMessage" rows="3"></textarea></label>
+            <button type="submit">Save Settings</button>
+          </form>
+
+          <form id="commandForm">
+            <h2>Custom Command</h2>
+            <label>Name <input name="name" required></label>
+            <label>Response <textarea name="response" rows="4" required></textarea></label>
+            <label class="check"><input type="checkbox" name="allowMentions"> Allow mass mentions</label>
+            <button type="submit">Save Command</button>
+          </form>
+        </section>
+
+        <section class="panel grid">
+          <form id="automodForm">
+            <h2>AutoMod Rule</h2>
+            <label>Blocked Word <input name="blockedWord"></label>
+            <label class="check"><input type="checkbox" name="blockInvites"> Block Discord invites</label>
+            <label class="check"><input type="checkbox" name="blockLinks"> Block links</label>
+            <button type="submit">Create Rule</button>
+          </form>
+
+          <form id="scheduleForm">
+            <h2>Scheduled Message</h2>
+            <label>Channel ID <input name="channelId" required></label>
+            <label>Interval Seconds <input name="intervalSeconds" type="number" min="60" value="3600" required></label>
+            <label>Message <textarea name="message" rows="4" required></textarea></label>
+            <button type="submit">Create Job</button>
+          </form>
+        </section>
+
+        <section class="panel grid">
+          <form id="ticketPanelForm">
+            <h2>Ticket Panel</h2>
+            <label>Panel Channel ID <input name="channelId" required></label>
+            <label>Staff Role IDs <input name="staffRoleIds" placeholder="roleId, roleId"></label>
+            <label>Category ID <input name="categoryId"></label>
+            <label>Title <input name="title" value="Open a Support Ticket"></label>
+            <label>Description <textarea name="description" rows="3">Click the button below to open a private support ticket.</textarea></label>
+            <label>Button Label <input name="buttonLabel" value="Open Ticket"></label>
+            <button type="submit">Create Ticket Panel</button>
+          </form>
+
+          <div>
+            <h2>Tickets</h2>
+            <div id="tickets" class="list"></div>
+          </div>
+        </section>
+
+        <section class="panel grid">
+          <div>
+            <h2>Custom Commands</h2>
+            <div id="commands" class="list"></div>
+          </div>
+          <div>
+            <h2>Scheduled Jobs</h2>
+            <div id="jobs" class="list"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Live Feed</h2>
+          <div id="feed" class="feed"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

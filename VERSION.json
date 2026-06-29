@@ -1,26 +1,26 @@
 {
-  "name": "The Purge",
-  "version": "1.0.9",
-  "codename": "The First Purge",
-  "release_date": "2025-10-31",
-  "description": "A Discord bot that automatically purges media messages — attachments, GIFs, stickers, and emojis — from selected channels on a timed schedule.",
+  "name": "ThePurge",
+  "version": "4.1.0",
+  "codename": "Control Panel",
+  "release_date": "2026-06-28",
+  "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
   "license": "MIT",
-  "database": "PostgreSQL (Railway)",
+  "database": "PostgreSQL on Railway",
   "framework": "discord.js v14",
-  "repository": "https://github.com/YOUR_USERNAME/ThePurge",
-  "changelog": {
-    "highlights": [
-      "Interactive setup using ,p command",
-      "Configurable purge intervals (seconds, minutes, hours, days)",
-      "Selectable media types (attachments, GIFs, stickers, emojis, all)",
-      "SQL persistence for saved purge settings",
-      "Automatic resume of purge tasks after restart"
-    ],
-    "next": [
-      "Add user-specific purge targeting",
-      "Add ,p status command",
-      "Add purge logging and error reporting"
-    ]
-  }
+  "runtime": "Node.js >=20",
+  "repository": "https://github.com/Puettse/ThePurge",
+  "highlights": [
+    "Modular Discord command and event architecture",
+    "Built-in Express dashboard and Discord OAuth login",
+    "Live dashboard feed using server-sent events",
+    "PostgreSQL-backed guild settings, modules, audit logs, scheduler, custom commands, ticketing, levels, and economy",
+    "Ticket panel, private ticket channel, claim, close, and transcript workflow"
+  ],
+  "next": [
+    "Validate live Railway OAuth callback and deployment variables",
+    "Add dashboard form support for reaction-role message binding",
+    "Expand ticket transcripts beyond the most recent 100 messages",
+    "Add integration tests with mocked Discord and PostgreSQL clients"
+  ]
 }

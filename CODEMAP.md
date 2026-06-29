@@ -1,24 +1,53 @@
-# 🧭 Code Map (Auto Updated)
-> Generated automatically on Fri Oct 31 04:27:37 UTC 2025
+# Code Map
 
-## 📂 Repository Structure
-.
-├── CHANGELOG.md
-├── CODEMAP.md
-├── LICENSE
-├── README.md
-├── VERSION.json
-├── index.js
-├── package.json
-└── scripts
-    └── fix_db.js
+Last updated: 2026-06-28
 
-2 directories, 8 files
+## Runtime Entry
 
-## 🧾 Version Info
-Version: 1.0.9
-Codename: The First Purge
-Release Date: 2025-10-31
+- `index.js` starts the application through `src/main.js`.
+- `src/main.js` loads configuration, connects PostgreSQL, runs migrations, creates the Discord client, registers commands, starts the scheduler, and serves the dashboard.
 
-## 🧑‍💻 Maintainer
-Auto-updated by GitHub Actions
+## Configuration and Data
+
+- `src/config.js` reads Railway/Discord/PostgreSQL environment variables.
+- `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
+
+## Discord Bot
+
+- `src/bot/client.js` configures Discord gateway intents and partials.
+- `src/bot/commands.js` defines public slash commands.
+- `src/bot/registerCommands.js` registers global application commands.
+- `src/bot/events.js` wires guild, message, member, reaction, and interaction handlers.
+- `src/bot/interactions.js` handles slash commands and ticket buttons.
+
+## Services
+
+- `src/services/auditService.js` writes audit events and publishes live-feed updates.
+- `src/services/liveFeed.js` maintains in-memory dashboard event history and subscribers.
+- `src/services/templateEngine.js` renders safe variables for custom commands, welcome messages, schedules, and logs.
+- `src/services/permissionService.js` centralizes Discord permission and role-hierarchy checks.
+- `src/services/moderationService.js` runs moderation actions and media purge filtering.
+- `src/services/automodService.js` evaluates message events against stored automation rules.
+- `src/services/scheduler.js` runs recurring message and purge jobs.
+- `src/services/schedulerTasks.js` contains scheduler task helpers.
+- `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
+
+## Dashboard
+
+- `src/web/server.js` serves static dashboard files and JSON/SSE APIs.
+- `src/web/auth.js` handles Discord OAuth and signed HTTP-only dashboard sessions.
+- `src/web/webActions.js` contains dashboard-triggered moderation actions.
+- `public/index.html`, `public/styles.css`, and `public/app.js` implement the browser control panel.
+
+## Scripts and Tests
+
+- `scripts/fix_db.js` is legacy database repair tooling.
+- `tests/*.test.js` cover pure shared behavior that can run without live Discord/Railway services.
+- `docs/code-reviews/*.md` stores lifecycle code review records for significant changes.
+
+## Important Operational Notes
+
+- The local folder is not currently a Git checkout.
+- Runtime requires `BOT_TOKEN`, `CLIENT_ID`, and `DATABASE_URL`.
+- Dashboard OAuth requires `CLIENT_SECRET`, `PUBLIC_BASE_URL`, and `SESSION_SECRET`.
+- Full validation requires successful npm dependency installation.
