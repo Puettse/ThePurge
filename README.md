@@ -10,6 +10,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Discord bot gateway with message, member, reaction, interaction, and guild lifecycle event handlers.
 - PostgreSQL schema for guild settings, modules, audit events, moderation cases, purge configs, scheduled jobs, custom commands, automod rules, reaction roles, ticket panels, tickets, ticket transcripts, levels, economy accounts, and dashboard users.
 - Dashboard/control panel served from the same Railway service.
+- Dedicated `/catalogue` manager for Jellyfin title sync and per-title Discord visibility toggles.
 - Discord OAuth dashboard login using `identify` and `guilds` scopes.
 - Server-side dashboard access filtering to guilds where the logged-in Discord user can manage the server.
 - Server-sent live feed for bot status, audit events, errors, dashboard events, and scheduler events.
@@ -18,7 +19,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
 - Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice playback, protected voice activity records, and protected 30-second WAV clips.
 - Jellyfin dashboard access: server-side API calls expose system status, libraries, active sessions, and recent activity without sending the API key to the browser.
-- Jellyfin bot catalogue: dashboard title sync, per-title bot access toggles, and `/catalog` browsing by genre, year, or actor with Jellyfin title links.
+- Jellyfin bot catalogue: `/catalogue` title sync, per-title bot access toggles, and `/catalog` browsing by genre, year, or actor with Jellyfin title links.
 
 ## Module Isolation Rule
 

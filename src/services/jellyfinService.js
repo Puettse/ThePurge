@@ -1,7 +1,7 @@
 export const JELLYFIN_CLIENT_NAME = 'ThePurge';
 export const JELLYFIN_DEVICE_NAME = 'Railway Dashboard';
 export const JELLYFIN_DEVICE_ID = 'thepurge-dashboard';
-export const JELLYFIN_CLIENT_VERSION = '4.3.6';
+export const JELLYFIN_CLIENT_VERSION = '4.3.7';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const CATALOG_PAGE_SIZE = 200;

@@ -2,6 +2,14 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.7] - 2026-06-30
+
+### Changed
+
+- Moved Jellyfin catalogue sync, search, pagination, and per-title Discord visibility toggles into a dedicated `/catalogue` management page.
+- Kept the main dashboard focused on bot control and Jellyfin connection status, with links to open the catalogue manager.
+- Added a clean `/catalogue` route so EBMSOL can embed the catalogue manager separately from Remote Ops.
+
 ## [4.3.6] - 2026-06-30
 
 ### Fixed

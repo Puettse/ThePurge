@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.3.6",
-  "codename": "Jellyfin Reachability Diagnostics",
+  "version": "4.3.7",
+  "codename": "Catalogue Manager Separation",
   "release_date": "2026-06-30",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -23,6 +23,7 @@
     "Remote Ops uses hold-to-talk microphone audio and browser-captured screen/app audio into Discord voice",
     "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser playback",
     "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
+    "Dedicated catalogue manager page separates Jellyfin title visibility from Remote Ops bot control",
     "Jellyfin dashboard retries localhost on IPv4 for local Windows servers and reports Railway reachability issues clearly",
     "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility",
     "Jellyfin movie catalogue access controls and Discord browse flow by genre, year, or actor"

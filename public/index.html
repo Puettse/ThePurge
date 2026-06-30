@@ -13,6 +13,7 @@
         <p id="status">Loading status...</p>
       </div>
       <div class="actions">
+        <a class="button secondary" href="/catalogue">Catalogue Manager</a>
         <a class="button" href="/auth/login" id="loginButton">Discord Login</a>
         <button id="logoutButton" type="button">Logout</button>
       </div>
@@ -82,7 +83,10 @@
         <section class="panel">
           <div class="panel-heading">
             <h2>Jellyfin</h2>
-            <button id="jellyfinRefreshButton" class="secondary" type="button">Refresh</button>
+            <div class="actions">
+              <a class="button secondary" href="/catalogue">Manage Catalogue</a>
+              <button id="jellyfinRefreshButton" class="secondary" type="button">Refresh</button>
+            </div>
           </div>
           <p id="jellyfinStatus" class="status-note"></p>
           <div id="jellyfinSummary" class="metric-grid"></div>
@@ -101,20 +105,6 @@
             <div id="jellyfinActivity" class="list compact-list"></div>
           </div>
           <p id="jellyfinErrors" class="status-note muted"></p>
-          <div class="panel-heading subheading">
-            <h3>Bot Catalogue</h3>
-            <button id="jellyfinCatalogRefreshButton" class="secondary" type="button">Sync Catalogue</button>
-          </div>
-          <div class="catalog-toolbar">
-            <label>Search Titles <input id="jellyfinCatalogSearch" type="search" placeholder="Filter by title, genre, year, actor"></label>
-            <label class="check"><input id="jellyfinCatalogAvailableOnly" type="checkbox"> Bot access only</label>
-          </div>
-          <p id="jellyfinCatalogStatus" class="status-note"></p>
-          <div id="jellyfinCatalogList" class="list compact-list catalog-list"></div>
-          <div class="form-actions">
-            <button id="jellyfinCatalogPrevButton" class="secondary" type="button">Previous</button>
-            <button id="jellyfinCatalogNextButton" class="secondary" type="button">Next</button>
-          </div>
         </section>
 
         <section class="panel grid">

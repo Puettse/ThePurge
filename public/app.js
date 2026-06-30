@@ -93,7 +93,6 @@ async function boot() {
   startFeed();
   renderRemoteOps();
   renderJellyfin();
-  renderJellyfinCatalog();
 
   if (state.me?.user) {
     await refreshGuilds();
@@ -143,7 +142,6 @@ async function refreshOverview() {
     refreshRemoteOps(),
     refreshVoiceRecords(),
     refreshJellyfin(),
-    refreshJellyfinCatalog(),
   ]);
   renderOverview();
 }
@@ -168,7 +166,6 @@ function renderOverview() {
   renderModules();
   renderRemoteOps();
   renderJellyfin();
-  renderJellyfinCatalog();
   renderSettings();
   renderCommands();
   renderJobs();
@@ -364,6 +361,8 @@ function renderJellyfin() {
 }
 
 function renderJellyfinCatalog() {
+  if (!elements.jellyfinCatalogList) return;
+
   elements.jellyfinCatalogList.innerHTML = '';
   elements.jellyfinCatalogRefreshButton.disabled = !selectedGuildId;
   elements.jellyfinCatalogSearch.disabled = !selectedGuildId;
@@ -623,34 +622,8 @@ function bindForms() {
   };
   elements.jellyfinRefreshButton.onclick = async () => {
     elements.jellyfinStatus.textContent = 'Refreshing Jellyfin...';
-    await Promise.all([
-      refreshJellyfin(),
-      refreshJellyfinCatalog({ forceRefresh: true }),
-    ]);
+    await refreshJellyfin();
     renderJellyfin();
-    renderJellyfinCatalog();
-  };
-  elements.jellyfinCatalogRefreshButton.onclick = async () => {
-    elements.jellyfinCatalogStatus.textContent = 'Syncing Jellyfin catalogue...';
-    state.jellyfinCatalogPage = 0;
-    await refreshJellyfinCatalog({ forceRefresh: true });
-    renderJellyfinCatalog();
-  };
-  elements.jellyfinCatalogSearch.oninput = () => {
-    state.jellyfinCatalogPage = 0;
-    renderJellyfinCatalog();
-  };
-  elements.jellyfinCatalogAvailableOnly.onchange = () => {
-    state.jellyfinCatalogPage = 0;
-    renderJellyfinCatalog();
-  };
-  elements.jellyfinCatalogPrevButton.onclick = () => {
-    state.jellyfinCatalogPage = Math.max(0, state.jellyfinCatalogPage - 1);
-    renderJellyfinCatalog();
-  };
-  elements.jellyfinCatalogNextButton.onclick = () => {
-    state.jellyfinCatalogPage += 1;
-    renderJellyfinCatalog();
   };
 
   elements.settingsForm.onsubmit = async (event) => {
