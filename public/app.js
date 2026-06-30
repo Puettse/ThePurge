@@ -3,6 +3,7 @@ let selectedGuildId = null;
 const TARGET_AUDIO_SAMPLE_RATE = 48000;
 const MAX_AUDIO_SOCKET_BUFFERED_BYTES = 512 * 1024;
 const JELLYFIN_CATALOG_PAGE_SIZE = 50;
+const INBOUND_AUDIO_PLAYBACK_DELAY = 0.08;
 
 const state = {
   health: null,
@@ -11,6 +12,7 @@ const state = {
   overview: null,
   remoteChannels: { textChannels: [], voiceChannels: [] },
   remoteVoice: { connected: false, channelId: null, status: 'disconnected' },
+  remoteVoiceRecords: { events: [], clips: [] },
   remoteError: null,
   jellyfin: null,
   jellyfinCatalog: { items: [], total: 0, enabledCount: 0, configured: false },
@@ -26,6 +28,11 @@ const voiceCapture = {
   socket: null,
   socketReadyPromise: null,
   intentionalSocketClose: false,
+  listenSocket: null,
+  listenIntentionalClose: false,
+  playbackAudioContext: null,
+  playbackNextTime: 0,
+  pushToTalkActive: false,
 };
 
 const elements = {
@@ -57,7 +64,11 @@ const elements = {
   remoteScreenStopButton: document.querySelector('#remoteScreenStopButton'),
   remoteScreenPreview: document.querySelector('#remoteScreenPreview'),
   remoteAudioStatus: document.querySelector('#remoteAudioStatus'),
+  remoteListenStartButton: document.querySelector('#remoteListenStartButton'),
+  remoteListenStopButton: document.querySelector('#remoteListenStopButton'),
   remoteInboundStatus: document.querySelector('#remoteInboundStatus'),
+  remoteVoiceRecordsRefreshButton: document.querySelector('#remoteVoiceRecordsRefreshButton'),
+  remoteVoiceRecords: document.querySelector('#remoteVoiceRecords'),
   jellyfinRefreshButton: document.querySelector('#jellyfinRefreshButton'),
   jellyfinStatus: document.querySelector('#jellyfinStatus'),
   jellyfinSummary: document.querySelector('#jellyfinSummary'),
@@ -130,6 +141,7 @@ async function refreshOverview() {
   state.overview = await api(`/api/guilds/${selectedGuildId}/overview`);
   await Promise.all([
     refreshRemoteOps(),
+    refreshVoiceRecords(),
     refreshJellyfin(),
     refreshJellyfinCatalog(),
   ]);
@@ -213,9 +225,12 @@ function renderRemoteOps() {
 
   const connectedChannel = voiceChannels.find((channel) => channel.id === state.remoteVoice.channelId);
   elements.remoteVoiceStatus.textContent = state.remoteVoice.connected
-    ? `Connected to ${connectedChannel?.name || state.remoteVoice.channelId} (${state.remoteVoice.status})`
+    ? `Connected to ${connectedChannel?.name || state.remoteVoice.channelId} (${state.remoteVoice.status}) | ${state.remoteVoice.selfMute ? 'muted' : 'unmuted'} | ${state.remoteVoice.selfDeaf ? 'deafened' : 'listening allowed'}`
     : 'Disconnected';
+  elements.remoteVoiceForm.selfMute.checked = Boolean(state.remoteVoice.selfMute);
+  elements.remoteVoiceForm.selfDeaf.checked = Boolean(state.remoteVoice.selfDeaf);
   updateVoiceCaptureControls();
+  renderVoiceRecords();
 }
 
 async function refreshJellyfin() {
@@ -228,6 +243,19 @@ async function refreshJellyfin() {
     state.jellyfin = await api(`/api/guilds/${selectedGuildId}/jellyfin/status`);
   } catch (error) {
     state.jellyfin = { ok: false, configured: false, error: error.message, missingConfig: [] };
+  }
+}
+
+async function refreshVoiceRecords() {
+  if (!selectedGuildId) {
+    state.remoteVoiceRecords = { events: [], clips: [] };
+    return;
+  }
+
+  try {
+    state.remoteVoiceRecords = await api(`/api/guilds/${selectedGuildId}/remote/voice/activity`);
+  } catch {
+    state.remoteVoiceRecords = { events: [], clips: [] };
   }
 }
 
@@ -461,6 +489,48 @@ function renderTickets() {
   }
 }
 
+function renderVoiceRecords() {
+  if (!elements.remoteVoiceRecords) return;
+  elements.remoteVoiceRecords.innerHTML = '';
+  const records = state.remoteVoiceRecords || { events: [], clips: [] };
+  const clips = records.clips || [];
+  const events = records.events || [];
+
+  if (clips.length === 0 && events.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'item';
+    empty.textContent = 'No voice records yet.';
+    elements.remoteVoiceRecords.append(empty);
+    return;
+  }
+
+  for (const clip of clips.slice(0, 10)) {
+    const row = document.createElement('div');
+    row.className = 'item';
+    const title = document.createElement('strong');
+    title.textContent = `Audio clip ${clip.id} | ${Math.round((clip.duration_ms || 0) / 1000)}s | ${clip.user_id || 'unknown user'}`;
+    const detail = document.createElement('small');
+    detail.textContent = `Recorded ${formatDate(clip.created_at)} | Transcript: ${clip.transcript_status || 'not_configured'}`;
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'none';
+    audio.src = `/api/guilds/${selectedGuildId}/remote/voice/clips/${clip.id}/audio`;
+    row.append(title, detail, audio);
+    elements.remoteVoiceRecords.append(row);
+  }
+
+  for (const event of events.slice(0, 10)) {
+    const row = document.createElement('div');
+    row.className = 'item';
+    const title = document.createElement('strong');
+    title.textContent = `${event.event_type || 'voice_event'} | ${event.user_id || 'unknown user'}`;
+    const detail = document.createElement('small');
+    detail.textContent = formatDate(event.created_at);
+    row.append(title, detail);
+    elements.remoteVoiceRecords.append(row);
+  }
+}
+
 function bindForms() {
   elements.logoutButton.onclick = async () => {
     await api('/auth/logout', { method: 'POST' });
@@ -532,10 +602,18 @@ function bindForms() {
     }
   };
 
-  elements.remoteMicStartButton.onclick = startDashboardMic;
+  elements.remoteVoiceForm.selfMute.onchange = updateRemoteVoiceStateFromForm;
+  elements.remoteVoiceForm.selfDeaf.onchange = updateRemoteVoiceStateFromForm;
+  bindPushToTalk();
   elements.remoteMicStopButton.onclick = () => {
     stopMicCapture();
-    setRemoteAudioStatus('Microphone stopped.');
+    setRemoteAudioStatus('Talk stopped.');
+  };
+  elements.remoteListenStartButton.onclick = startIncomingVoice;
+  elements.remoteListenStopButton.onclick = () => stopIncomingVoice('dashboard');
+  elements.remoteVoiceRecordsRefreshButton.onclick = async () => {
+    await refreshVoiceRecords();
+    renderVoiceRecords();
   };
   elements.remoteScreenStartButton.onclick = startScreenShare;
   elements.remoteScreenStopButton.onclick = () => {
@@ -717,6 +795,75 @@ function setRemoteMessageStatus(message) {
   elements.remoteMessageStatus.textContent = message;
 }
 
+async function updateRemoteVoiceStateFromForm() {
+  if (!selectedGuildId || !state.remoteVoice.connected) return;
+  elements.remoteVoiceStatus.textContent = 'Updating voice state...';
+
+  try {
+    const result = await api(`/api/guilds/${selectedGuildId}/remote/voice/state`, {
+      method: 'POST',
+      body: {
+        selfMute: elements.remoteVoiceForm.selfMute.checked,
+        selfDeaf: elements.remoteVoiceForm.selfDeaf.checked,
+      },
+    });
+    state.remoteVoice = result.voice;
+    elements.remoteVoiceStatus.textContent = result.message;
+    if (state.remoteVoice.selfDeaf) stopIncomingVoice('self_deaf_enabled');
+    updateVoiceCaptureControls();
+  } catch (error) {
+    elements.remoteVoiceStatus.textContent = error.message;
+    await refreshRemoteOps();
+    renderRemoteOps();
+  }
+}
+
+function bindPushToTalk() {
+  const start = (event) => {
+    event.preventDefault();
+    startPushToTalk();
+  };
+  const stop = (event) => {
+    event.preventDefault();
+    stopPushToTalk();
+  };
+
+  elements.remoteMicStartButton.onpointerdown = start;
+  elements.remoteMicStartButton.onpointerup = stop;
+  elements.remoteMicStartButton.onpointercancel = stop;
+  elements.remoteMicStartButton.onpointerleave = stop;
+  elements.remoteMicStartButton.onkeydown = (event) => {
+    if (event.key === ' ' || event.key === 'Enter') start(event);
+  };
+  elements.remoteMicStartButton.onkeyup = (event) => {
+    if (event.key === ' ' || event.key === 'Enter') stop(event);
+  };
+  window.addEventListener('pointerup', () => {
+    if (voiceCapture.pushToTalkActive) stopPushToTalk();
+  });
+}
+
+async function startPushToTalk() {
+  if (voiceCapture.pushToTalkActive) return;
+  voiceCapture.pushToTalkActive = true;
+  elements.remoteMicStartButton.classList.add('active');
+  elements.remoteMicStartButton.textContent = 'Talking...';
+  await startDashboardMic();
+}
+
+function stopPushToTalk() {
+  if (!voiceCapture.pushToTalkActive) return;
+  resetPushToTalkButton();
+  stopMicCapture();
+  setRemoteAudioStatus('Push-to-talk released.');
+}
+
+function resetPushToTalkButton() {
+  voiceCapture.pushToTalkActive = false;
+  elements.remoteMicStartButton.classList.remove('active');
+  elements.remoteMicStartButton.textContent = 'Hold to Talk';
+}
+
 async function startDashboardMic() {
   setRemoteAudioStatus('Opening microphone...');
 
@@ -736,6 +883,12 @@ async function startDashboardMic() {
       video: false,
     });
 
+    if (!voiceCapture.pushToTalkActive) {
+      stopMediaStream(stream);
+      setRemoteAudioStatus('Push-to-talk released.');
+      return;
+    }
+
     stopMediaStream(voiceCapture.micStream);
     voiceCapture.micStream = stream;
     watchStreamEnd(stream, () => {
@@ -746,10 +899,15 @@ async function startDashboardMic() {
     });
 
     await refreshAudioBridge();
-    setRemoteAudioStatus('Microphone audio is live in Discord voice.');
+    if (voiceCapture.pushToTalkActive) {
+      setRemoteAudioStatus('Push-to-talk is live in Discord voice.');
+    } else {
+      stopMicCapture();
+    }
   } catch (error) {
     stopMediaStream(voiceCapture.micStream);
     voiceCapture.micStream = null;
+    resetPushToTalkButton();
     stopAudioTransport();
     setRemoteAudioStatus(error.message);
   } finally {
@@ -800,6 +958,7 @@ async function startScreenShare() {
 function stopMicCapture() {
   stopMediaStream(voiceCapture.micStream);
   voiceCapture.micStream = null;
+  resetPushToTalkButton();
   refreshAudioBridge().catch((error) => setRemoteAudioStatus(error.message));
   updateVoiceCaptureControls();
 }
@@ -822,12 +981,125 @@ function stopAllVoiceCapture() {
   stopMediaStream(voiceCapture.screenStream);
   voiceCapture.micStream = null;
   voiceCapture.screenStream = null;
+  resetPushToTalkButton();
   voiceCapture.screenLabel = '';
   elements.remoteScreenPreview.srcObject = null;
   elements.remoteScreenPreview.classList.remove('active');
   updateScreenSourceSelect();
   stopAudioTransport();
+  stopIncomingVoice('dashboard_reset');
   updateVoiceCaptureControls();
+}
+
+async function startIncomingVoice() {
+  try {
+    requireGuildSelection();
+    if (!state.remoteVoice.connected) {
+      throw new Error('Join a voice channel before listening.');
+    }
+    if (state.remoteVoice.selfDeaf) {
+      throw new Error('Turn Self deaf off before listening.');
+    }
+
+    await ensurePlaybackAudioContext();
+    stopIncomingVoice('restart');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/guilds/${selectedGuildId}/remote/voice/listen`);
+    socket.binaryType = 'arraybuffer';
+    voiceCapture.listenIntentionalClose = false;
+    voiceCapture.listenSocket = socket;
+    elements.remoteInboundStatus.textContent = 'Connecting incoming voice feed...';
+
+    socket.onmessage = (event) => handleIncomingVoiceMessage(event.data);
+    socket.onerror = () => {
+      elements.remoteInboundStatus.textContent = 'Incoming voice socket failed.';
+    };
+    socket.onclose = () => {
+      const intentional = voiceCapture.listenIntentionalClose;
+      voiceCapture.listenSocket = null;
+      if (!intentional) elements.remoteInboundStatus.textContent = 'Incoming voice feed disconnected.';
+      updateVoiceCaptureControls();
+      refreshVoiceRecords().then(renderVoiceRecords).catch(() => null);
+    };
+  } catch (error) {
+    elements.remoteInboundStatus.textContent = error.message;
+    updateVoiceCaptureControls();
+  }
+}
+
+function stopIncomingVoice(reason = 'dashboard') {
+  voiceCapture.listenIntentionalClose = true;
+  if (voiceCapture.listenSocket && voiceCapture.listenSocket.readyState < WebSocket.CLOSING) {
+    voiceCapture.listenSocket.close(1000, reason);
+  }
+  voiceCapture.listenSocket = null;
+  if (elements.remoteInboundStatus) {
+    elements.remoteInboundStatus.textContent = 'Incoming voice feed disconnected.';
+  }
+  updateVoiceCaptureControls();
+}
+
+function handleIncomingVoiceMessage(data) {
+  if (data instanceof ArrayBuffer) {
+    playIncomingPcm(data).catch((error) => {
+      elements.remoteInboundStatus.textContent = error.message;
+    });
+    return;
+  }
+
+  const payload = parseSocketMessage(data);
+  if (!payload) return;
+  if (payload.voice) state.remoteVoice = payload.voice;
+
+  if (payload.type === 'ready') {
+    elements.remoteInboundStatus.textContent = payload.message || 'Incoming voice feed is live.';
+  } else if (payload.type === 'speaking_start') {
+    elements.remoteInboundStatus.textContent = `Receiving audio from ${payload.userId}.`;
+  } else if (payload.type === 'speaking_end') {
+    elements.remoteInboundStatus.textContent = 'Incoming voice feed is live.';
+  } else if (payload.type === 'stopped') {
+    elements.remoteInboundStatus.textContent = payload.message || 'Incoming voice feed stopped.';
+  } else if (payload.type === 'error') {
+    elements.remoteInboundStatus.textContent = payload.message || 'Incoming voice feed failed.';
+  }
+
+  updateVoiceCaptureControls();
+}
+
+async function ensurePlaybackAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) throw new Error('This browser cannot play incoming voice audio.');
+  if (!voiceCapture.playbackAudioContext || voiceCapture.playbackAudioContext.state === 'closed') {
+    voiceCapture.playbackAudioContext = new AudioContextClass({ sampleRate: TARGET_AUDIO_SAMPLE_RATE });
+    voiceCapture.playbackNextTime = 0;
+  }
+  if (voiceCapture.playbackAudioContext.state === 'suspended') {
+    await voiceCapture.playbackAudioContext.resume();
+  }
+}
+
+async function playIncomingPcm(arrayBuffer) {
+  await ensurePlaybackAudioContext();
+  const context = voiceCapture.playbackAudioContext;
+  const view = new DataView(arrayBuffer);
+  const frameCount = Math.floor(view.byteLength / 4);
+  if (frameCount === 0) return;
+
+  const buffer = context.createBuffer(2, frameCount, TARGET_AUDIO_SAMPLE_RATE);
+  const left = buffer.getChannelData(0);
+  const right = buffer.getChannelData(1);
+  for (let index = 0; index < frameCount; index += 1) {
+    const offset = index * 4;
+    left[index] = view.getInt16(offset, true) / 32768;
+    right[index] = view.getInt16(offset + 2, true) / 32768;
+  }
+
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  const startAt = Math.max(context.currentTime + INBOUND_AUDIO_PLAYBACK_DELAY, voiceCapture.playbackNextTime);
+  source.start(startAt);
+  voiceCapture.playbackNextTime = startAt + buffer.duration;
 }
 
 async function refreshAudioBridge() {
@@ -1055,6 +1327,7 @@ function updateVoiceCaptureControls() {
   const micActive = Boolean(voiceCapture.micStream);
   const screenActive = Boolean(voiceCapture.screenStream);
   const audioActive = Boolean(voiceCapture.socket) || getActiveAudioStreams().length > 0;
+  const listenActive = Boolean(voiceCapture.listenSocket);
 
   elements.remoteMicStartButton.disabled = !connected || micActive;
   elements.remoteMicStopButton.disabled = !micActive;
@@ -1062,9 +1335,15 @@ function updateVoiceCaptureControls() {
   elements.remoteScreenStopButton.disabled = !screenActive;
   elements.remoteScreenAudio.disabled = !selectedGuildId;
   elements.remoteScreenSource.disabled = !screenActive;
+  elements.remoteListenStartButton.disabled = !connected || listenActive || Boolean(state.remoteVoice.selfDeaf);
+  elements.remoteListenStopButton.disabled = !listenActive;
+  elements.remoteVoiceRecordsRefreshButton.disabled = !selectedGuildId;
 
   if (!connected && audioActive) {
     stopAllVoiceCapture();
+  }
+  if (!connected && listenActive) {
+    stopIncomingVoice('voice_disconnected');
   }
 
   if (state.remoteVoice.transmitting && !elements.remoteAudioStatus.textContent) {

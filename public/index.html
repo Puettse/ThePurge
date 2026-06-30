@@ -56,8 +56,8 @@
               <div class="voice-tools">
                 <h4>Audio Bridge</h4>
                 <div class="form-actions">
-                  <button id="remoteMicStartButton" class="secondary" type="button">Start Mic</button>
-                  <button id="remoteMicStopButton" class="secondary" type="button">Stop Mic</button>
+                  <button id="remoteMicStartButton" class="secondary ptt-button" type="button">Hold to Talk</button>
+                  <button id="remoteMicStopButton" class="secondary" type="button">Stop Talk</button>
                 </div>
                 <label class="check"><input id="remoteScreenAudio" type="checkbox" checked> Share screen audio</label>
                 <label>Screen/App Source <select id="remoteScreenSource" disabled><option>No source selected</option></select></label>
@@ -67,7 +67,13 @@
                 </div>
                 <video id="remoteScreenPreview" class="screen-preview" muted playsinline></video>
                 <p id="remoteAudioStatus" class="status-note"></p>
-                <p id="remoteInboundStatus" class="status-note muted">Incoming voice feed requires a receiver/decoder layer.</p>
+                <div class="form-actions">
+                  <button id="remoteListenStartButton" class="secondary" type="button">Listen</button>
+                  <button id="remoteListenStopButton" class="secondary" type="button">Stop Listening</button>
+                  <button id="remoteVoiceRecordsRefreshButton" class="secondary" type="button">Refresh Records</button>
+                </div>
+                <p id="remoteInboundStatus" class="status-note muted">Incoming voice feed is disconnected.</p>
+                <div id="remoteVoiceRecords" class="list compact-list voice-records"></div>
               </div>
             </form>
           </div>

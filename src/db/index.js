@@ -254,6 +254,30 @@ export async function migrate(db) {
       PRIMARY KEY (guild_id, item_id)
     );
 
+    CREATE TABLE IF NOT EXISTS remote_voice_events (
+      id BIGSERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT,
+      user_id TEXT,
+      event_type TEXT NOT NULL,
+      details JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS remote_voice_clips (
+      id BIGSERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT,
+      user_id TEXT,
+      content_type TEXT NOT NULL DEFAULT 'audio/wav',
+      byte_size INTEGER NOT NULL,
+      duration_ms INTEGER NOT NULL,
+      transcript TEXT,
+      transcript_status TEXT NOT NULL DEFAULT 'not_configured',
+      audio BYTEA NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     INSERT INTO scheduled_jobs (guild_id, channel_id, job_type, payload, interval_seconds, next_run_at)
     SELECT
       purge_configs.guild_id,

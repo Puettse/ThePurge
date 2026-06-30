@@ -2,6 +2,26 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.5] - 2026-06-30
+
+### Added
+
+- Added inbound Discord voice monitoring through the `@discordjs/voice` receiver, `opusscript` Opus decoding, and an authenticated dashboard WebSocket.
+- Added browser playback for inbound voice chat audio from the dashboard.
+- Added protected voice activity records and protected 30-second WAV clips stored behind dashboard authentication.
+- Added dashboard controls to refresh and play protected voice clips.
+
+### Changed
+
+- Changed dashboard microphone control to push-to-talk with a hold-to-talk button instead of continuous active mic streaming.
+- Added live dashboard updates for bot self mute and self deaf state after joining voice.
+- Added an authenticated voice state route so self mute/deaf checkboxes update the active Discord voice connection.
+
+### Known Limits
+
+- Discord bot accounts still do not receive other users' camera/screen video streams through the official bot voice API, so video clip capture from Discord cams is not implemented.
+- Voice clip transcription records are stored with `not_configured` status until a speech-to-text provider is wired in.
+
 ## [4.3.4] - 2026-06-30
 
 ### Added

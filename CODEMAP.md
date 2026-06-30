@@ -12,6 +12,7 @@ Last updated: 2026-06-30
 - `src/config.js` reads Railway/Discord/PostgreSQL/Jellyfin environment variables.
 - `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
 - `jellyfin_catalog_access` stores per-guild Jellyfin item access toggles for bot catalogue exposure.
+- `remote_voice_events` and `remote_voice_clips` store protected dashboard-only voice activity records and WAV clips.
 - `railway.json` pins Railway build/deploy config, health check, and restart policy.
 
 ## Discord Bot
@@ -35,14 +36,14 @@ Last updated: 2026-06-30
 - `src/services/scheduler.js` runs recurring message and purge jobs.
 - `src/services/schedulerTasks.js` contains scheduler task helpers.
 - `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
-- `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, and dashboard audio transmission.
+- `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, dashboard audio transmission, inbound voice receiving, and protected voice records/clips.
 - `src/services/jellyfinService.js` calls Jellyfin system, library, sessions, activity, and movie catalogue endpoints through server-side token auth.
 
 ## Dashboard
 
 - `src/web/server.js` serves static dashboard files and JSON/SSE APIs.
 - `src/web/auth.js` handles Discord OAuth and signed HTTP-only dashboard sessions.
-- `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades and streams browser audio into Discord voice.
+- `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades for outbound dashboard audio and inbound Discord voice playback.
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
 - `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
 - `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, tickets, remote ops, and Jellyfin.

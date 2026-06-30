@@ -4,11 +4,14 @@ import { canManageGuild } from './auth.js';
 import {
   RemoteValidationError,
   startRemoteMicStream,
+  startRemoteVoiceReceive,
   stopRemoteMicStream,
+  stopRemoteVoiceReceive,
 } from '../services/remoteControlService.js';
 
 const MAX_AUDIO_CHUNK_BYTES = 128 * 1024;
 const REMOTE_MIC_PATH = /^\/api\/guilds\/(\d+)\/remote\/voice\/mic$/;
+const REMOTE_LISTEN_PATH = /^\/api\/guilds\/(\d+)\/remote\/voice\/listen$/;
 
 export function createRemoteVoiceBridge(context, auth) {
   const wsServer = new WebSocketServer({
@@ -18,12 +21,13 @@ export function createRemoteVoiceBridge(context, auth) {
 
   function attach(server) {
     server.on('upgrade', (req, socket, head) => {
-      const match = getMicPathMatch(req);
+      const match = getVoicePathMatch(req);
       if (!match) return;
 
       let access;
       try {
-        access = authorizeRequest(context, auth, req, match[1]);
+        access = authorizeRequest(context, auth, req, match.guildId);
+        access.mode = match.mode;
       } catch (error) {
         rejectUpgrade(socket, error.statusCode || 401, error.message || 'Unauthorized');
         return;
@@ -36,7 +40,8 @@ export function createRemoteVoiceBridge(context, auth) {
   }
 
   wsServer.on('connection', (ws, req, access) => {
-    handleRemoteMicConnection(context, ws, access).catch((error) => {
+    const handler = access.mode === 'listen' ? handleRemoteListenConnection : handleRemoteMicConnection;
+    handler(context, ws, access).catch((error) => {
       sendSocketJson(ws, { type: 'error', message: error.message || 'Dashboard audio failed.' });
       ws.close(error instanceof RemoteValidationError ? 1008 : 1011);
     });
@@ -94,6 +99,35 @@ async function handleRemoteMicConnection(context, ws, { guild, session }) {
   });
 }
 
+async function handleRemoteListenConnection(context, ws, { guild, session }) {
+  let stopped = false;
+  const subscriber = {
+    sendJson(payload) {
+      sendSocketJson(ws, payload);
+    },
+    sendPcm(chunk) {
+      if (ws.readyState === 1) {
+        ws.send(chunk, { binary: true });
+      }
+    },
+  };
+
+  const stop = async (reason) => {
+    if (stopped) return;
+    stopped = true;
+    await stopRemoteVoiceReceive(context, guild, session.user, subscriber, { reason }).catch(() => null);
+  };
+
+  await startRemoteVoiceReceive(context, guild, session.user, subscriber);
+
+  ws.on('close', () => {
+    stop('socket_closed');
+  });
+  ws.on('error', () => {
+    stop('socket_error');
+  });
+}
+
 function authorizeRequest(context, auth, req, guildId) {
   req.cookies = parseCookies(req.headers.cookie || '');
   const session = auth.readCookie(req);
@@ -114,9 +148,13 @@ function authorizeRequest(context, auth, req, guildId) {
   return { guild, session };
 }
 
-function getMicPathMatch(req) {
+function getVoicePathMatch(req) {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  return url.pathname.match(REMOTE_MIC_PATH);
+  const micMatch = url.pathname.match(REMOTE_MIC_PATH);
+  if (micMatch) return { guildId: micMatch[1], mode: 'mic' };
+  const listenMatch = url.pathname.match(REMOTE_LISTEN_PATH);
+  if (listenMatch) return { guildId: listenMatch[1], mode: 'listen' };
+  return null;
 }
 
 function rejectUpgrade(socket, statusCode, message) {

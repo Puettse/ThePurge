@@ -2,6 +2,7 @@ import { AttachmentBuilder, ChannelType, PermissionsBitField } from 'discord.js'
 import {
   createAudioPlayer,
   createAudioResource,
+  EndBehaviorType,
   entersState,
   getVoiceConnection,
   joinVoiceChannel,
@@ -9,6 +10,7 @@ import {
   StreamType,
   VoiceConnectionStatus,
 } from '@discordjs/voice';
+import prism from 'prism-media';
 
 export const MAX_REMOTE_MESSAGE_LENGTH = 2000;
 export const MAX_REMOTE_FILES = 5;
@@ -27,7 +29,15 @@ const VOICE_CHANNEL_TYPES = new Set([
   ChannelType.GuildStageVoice,
 ]);
 
+const PCM_SAMPLE_RATE = 48_000;
+const PCM_CHANNELS = 2;
+const PCM_BYTES_PER_SAMPLE = 2;
+const PCM_FRAME_SIZE = 960;
+const MAX_VOICE_CLIP_MS = 30_000;
+const MAX_VOICE_CLIP_PCM_BYTES = PCM_SAMPLE_RATE * PCM_CHANNELS * PCM_BYTES_PER_SAMPLE * (MAX_VOICE_CLIP_MS / 1000);
+
 const remoteMicSessions = new Map();
+const remoteReceiveSessions = new Map();
 
 export async function listRemoteChannels(guild) {
   const channels = await guild.channels.fetch();
@@ -65,8 +75,10 @@ export async function listRemoteChannels(guild) {
 export function getRemoteVoiceStatus(guild) {
   const connection = getVoiceConnection(guild.id);
   const micSession = remoteMicSessions.get(guild.id);
+  const receiveSession = remoteReceiveSessions.get(guild.id);
   if (!connection) {
     if (micSession) stopRemoteMicSession(guild.id, micSession);
+    if (receiveSession) stopRemoteReceiveSession(guild.id, receiveSession);
     return {
       connected: false,
       channelId: null,
@@ -74,11 +86,16 @@ export function getRemoteVoiceStatus(guild) {
       selfMute: false,
       selfDeaf: false,
       transmitting: false,
+      receiving: false,
+      speakingUsers: [],
     };
   }
 
   if (connection.state.status === VoiceConnectionStatus.Destroyed && micSession) {
     stopRemoteMicSession(guild.id, micSession);
+  }
+  if (connection.state.status === VoiceConnectionStatus.Destroyed && receiveSession) {
+    stopRemoteReceiveSession(guild.id, receiveSession);
   }
 
   return {
@@ -88,8 +105,12 @@ export function getRemoteVoiceStatus(guild) {
     selfMute: Boolean(connection.joinConfig.selfMute),
     selfDeaf: Boolean(connection.joinConfig.selfDeaf),
     transmitting: Boolean(remoteMicSessions.get(guild.id)),
+    receiving: Boolean(remoteReceiveSessions.get(guild.id)?.subscribers.size),
+    speakingUsers: Array.from(remoteReceiveSessions.get(guild.id)?.speakingUsers.keys() || []),
     audioStartedAt: remoteMicSessions.get(guild.id)?.startedAt || null,
     audioActorId: remoteMicSessions.get(guild.id)?.actorId || null,
+    receiveStartedAt: remoteReceiveSessions.get(guild.id)?.startedAt || null,
+    receiveActorId: remoteReceiveSessions.get(guild.id)?.actorId || null,
   };
 }
 
@@ -181,6 +202,51 @@ export async function joinRemoteVoiceChannel(context, guild, actor, body) {
   return {
     ok: true,
     message: `Connected to ${channel.name}.`,
+    voice: getRemoteVoiceStatus(guild),
+  };
+}
+
+export async function updateRemoteVoiceState(context, guild, actor, body) {
+  const connection = getVoiceConnection(guild.id);
+  if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) {
+    throw new RemoteValidationError('Join a voice channel before changing voice state.');
+  }
+
+  const selfMute = body.selfMute === true;
+  const selfDeaf = body.selfDeaf === true;
+  const channelId = connection.joinConfig.channelId;
+  const ok = connection.rejoin({
+    channelId,
+    selfMute,
+    selfDeaf,
+  });
+
+  if (!ok) {
+    throw new RemoteValidationError('The bot could not update its voice state.');
+  }
+
+  await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+
+  if (selfDeaf) {
+    const receiveSession = remoteReceiveSessions.get(guild.id);
+    if (receiveSession) stopRemoteReceiveSession(guild.id, receiveSession);
+  }
+
+  await recordRemoteAudit(context, {
+    guildId: guild.id,
+    actorId: actor.id,
+    targetId: channelId || null,
+    action: 'remote.voice_state_updated',
+    details: {
+      channelId: channelId || null,
+      selfMute,
+      selfDeaf,
+    },
+  });
+
+  return {
+    ok: true,
+    message: `Voice state updated: ${selfMute ? 'muted' : 'unmuted'}, ${selfDeaf ? 'deafened' : 'undeafened'}.`,
     voice: getRemoteVoiceStatus(guild),
   };
 }
@@ -277,6 +343,127 @@ export async function stopRemoteMicStream(context, guild, actor, options = {}) {
   };
 }
 
+export async function startRemoteVoiceReceive(context, guild, actor, subscriber) {
+  const connection = getVoiceConnection(guild.id);
+  if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) {
+    throw new RemoteValidationError('Join a voice channel before listening.');
+  }
+
+  if (connection.joinConfig.selfDeaf) {
+    throw new RemoteValidationError('Turn Self deaf off before listening to voice.');
+  }
+
+  let session = remoteReceiveSessions.get(guild.id);
+  if (!session) {
+    session = createRemoteReceiveSession(context, guild, actor, connection);
+    remoteReceiveSessions.set(guild.id, session);
+  }
+
+  session.subscribers.add(subscriber);
+  subscriber.sendJson?.({
+    type: 'ready',
+    message: 'Incoming voice feed is live.',
+    voice: getRemoteVoiceStatus(guild),
+  });
+
+  await recordRemoteAudit(context, {
+    guildId: guild.id,
+    actorId: actor.id,
+    targetId: connection.joinConfig.channelId || null,
+    action: 'remote.voice_receive_started',
+    details: {
+      channelId: connection.joinConfig.channelId || null,
+      subscribers: session.subscribers.size,
+    },
+  });
+
+  return {
+    ok: true,
+    message: 'Incoming voice feed is live.',
+    voice: getRemoteVoiceStatus(guild),
+  };
+}
+
+export async function stopRemoteVoiceReceive(context, guild, actor, subscriber, options = {}) {
+  const session = remoteReceiveSessions.get(guild.id);
+  if (!session) {
+    return {
+      ok: true,
+      message: 'Incoming voice feed is already stopped.',
+      voice: getRemoteVoiceStatus(guild),
+    };
+  }
+
+  if (subscriber) session.subscribers.delete(subscriber);
+
+  if (session.subscribers.size === 0) {
+    stopRemoteReceiveSession(guild.id, session);
+  }
+
+  await recordRemoteAudit(context, {
+    guildId: guild.id,
+    actorId: actor.id,
+    targetId: getVoiceConnection(guild.id)?.joinConfig.channelId || null,
+    action: 'remote.voice_receive_stopped',
+    details: {
+      reason: options.reason || 'dashboard',
+      subscribers: session.subscribers.size,
+    },
+  });
+
+  return {
+    ok: true,
+    message: 'Incoming voice feed stopped.',
+    voice: getRemoteVoiceStatus(guild),
+  };
+}
+
+export async function listRemoteVoiceRecords(context, guildId, limit = 50) {
+  if (!context.db) return { events: [], clips: [] };
+  const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 50, 1), 100);
+  const [events, clips] = await Promise.all([
+    context.db.query(
+      `
+      SELECT id, guild_id, channel_id, user_id, event_type, details, created_at
+      FROM remote_voice_events
+      WHERE guild_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+      `,
+      [guildId, safeLimit],
+    ),
+    context.db.query(
+      `
+      SELECT id, guild_id, channel_id, user_id, content_type, byte_size, duration_ms,
+             transcript, transcript_status, created_at
+      FROM remote_voice_clips
+      WHERE guild_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+      `,
+      [guildId, safeLimit],
+    ),
+  ]);
+
+  return {
+    events: events.rows,
+    clips: clips.rows,
+  };
+}
+
+export async function getRemoteVoiceClip(context, guildId, clipId) {
+  if (!context.db) return null;
+  const result = await context.db.query(
+    `
+    SELECT id, guild_id, content_type, audio
+    FROM remote_voice_clips
+    WHERE guild_id = $1 AND id = $2
+    `,
+    [guildId, clipId],
+  );
+  return result.rows[0] || null;
+}
+
 export async function leaveRemoteVoiceChannel(context, guild, actor) {
   const connection = getVoiceConnection(guild.id);
   if (!connection) {
@@ -289,7 +476,9 @@ export async function leaveRemoteVoiceChannel(context, guild, actor) {
 
   const channelId = connection.joinConfig.channelId || null;
   const micSession = remoteMicSessions.get(guild.id);
+  const receiveSession = remoteReceiveSessions.get(guild.id);
   if (micSession) stopRemoteMicSession(guild.id, micSession);
+  if (receiveSession) stopRemoteReceiveSession(guild.id, receiveSession);
   connection.destroy();
 
   await recordRemoteAudit(context, {
@@ -400,6 +589,244 @@ async function recordRemoteAudit(context, event) {
     source: 'dashboard',
     severity: 'info',
   });
+}
+
+function createRemoteReceiveSession(context, guild, actor, connection) {
+  const session = {
+    actorId: actor.id,
+    channelId: connection.joinConfig.channelId || null,
+    connection,
+    context,
+    guildId: guild.id,
+    startedAt: new Date().toISOString(),
+    subscribers: new Set(),
+    speakingUsers: new Map(),
+    userStreams: new Map(),
+    onSpeakingStart: null,
+    onConnectionStateChange: null,
+  };
+
+  session.onSpeakingStart = (userId) => {
+    startReceiveUserStream(context, guild, session, userId).catch((error) => {
+      context.liveFeed.publish('remote.voice_receive_error', {
+        guildId: guild.id,
+        userId,
+        error: String(error?.message || error),
+      }, 'error');
+    });
+  };
+  session.onConnectionStateChange = (oldState, newState) => {
+    if (newState.status === VoiceConnectionStatus.Destroyed) {
+      stopRemoteReceiveSession(guild.id, session);
+    }
+  };
+
+  connection.receiver.speaking.on('start', session.onSpeakingStart);
+  connection.on('stateChange', session.onConnectionStateChange);
+
+  return session;
+}
+
+async function startReceiveUserStream(context, guild, session, userId) {
+  if (!userId || userId === context.client.user?.id || session.userStreams.has(userId)) return;
+  const connection = getVoiceConnection(guild.id);
+  if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) return;
+
+  const userState = {
+    decoder: null,
+    ended: false,
+    opusStream: null,
+    recorder: createVoiceClipRecorder(),
+    startedAt: Date.now(),
+    userId,
+  };
+  session.userStreams.set(userId, userState);
+  session.speakingUsers.set(userId, new Date().toISOString());
+
+  broadcastReceiveJson(session, {
+    type: 'speaking_start',
+    userId,
+    voice: getRemoteVoiceStatus(guild),
+  });
+  recordVoiceEvent(context, session, userId, 'speaking_start').catch(() => null);
+
+  const opusStream = connection.receiver.subscribe(userId, {
+    end: {
+      behavior: EndBehaviorType.AfterSilence,
+      duration: 750,
+    },
+  });
+  const decoder = new prism.opus.Decoder({
+    rate: PCM_SAMPLE_RATE,
+    channels: PCM_CHANNELS,
+    frameSize: PCM_FRAME_SIZE,
+  });
+  userState.opusStream = opusStream;
+  userState.decoder = decoder;
+
+  const finish = (error = null) => {
+    if (userState.ended) return;
+    userState.ended = true;
+    session.userStreams.delete(userId);
+    session.speakingUsers.delete(userId);
+    flushVoiceClip(context, session, userId, userState, 'speaker_end');
+    broadcastReceiveJson(session, {
+      type: 'speaking_end',
+      userId,
+      error: error ? String(error?.message || error) : null,
+      voice: getRemoteVoiceStatus(guild),
+    });
+    recordVoiceEvent(context, session, userId, 'speaking_end', {
+      durationMs: Date.now() - userState.startedAt,
+      error: error ? String(error?.message || error) : null,
+    }).catch(() => null);
+  };
+
+  decoder.on('data', (chunk) => {
+    const pcm = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    broadcastReceivePcm(session, pcm);
+    appendVoiceClipPcm(context, session, userId, userState, pcm);
+  });
+  opusStream.on('error', finish);
+  decoder.on('error', finish);
+  decoder.on('end', () => finish());
+  decoder.on('close', () => finish());
+  opusStream.pipe(decoder);
+}
+
+function stopRemoteReceiveSession(guildId, session) {
+  remoteReceiveSessions.delete(guildId);
+
+  if (session.onSpeakingStart) {
+    session.connection.receiver.speaking.off('start', session.onSpeakingStart);
+  }
+  if (session.onConnectionStateChange) {
+    session.connection.off('stateChange', session.onConnectionStateChange);
+  }
+
+  for (const [userId, userState] of session.userStreams.entries()) {
+    recordVoiceEvent(session.context, session, userId, 'speaking_end', {
+      durationMs: Date.now() - userState.startedAt,
+      reason: 'receive_stopped',
+    }).catch(() => null);
+    userState.ended = true;
+    flushVoiceClip(session.context, session, userId, userState, 'receive_stopped');
+    userState.decoder?.destroy();
+    userState.opusStream?.destroy();
+  }
+
+  broadcastReceiveJson(session, {
+    type: 'stopped',
+    message: 'Incoming voice feed stopped.',
+  });
+  session.subscribers.clear();
+  session.userStreams.clear();
+  session.speakingUsers.clear();
+}
+
+function broadcastReceiveJson(session, payload) {
+  for (const subscriber of session.subscribers) {
+    subscriber.sendJson?.(payload);
+  }
+}
+
+function broadcastReceivePcm(session, chunk) {
+  for (const subscriber of session.subscribers) {
+    subscriber.sendPcm?.(chunk);
+  }
+}
+
+function createVoiceClipRecorder() {
+  return {
+    bytes: 0,
+    chunks: [],
+    startedAt: Date.now(),
+  };
+}
+
+function appendVoiceClipPcm(context, session, userId, userState, chunk) {
+  userState.recorder.chunks.push(chunk);
+  userState.recorder.bytes += chunk.length;
+  if (userState.recorder.bytes >= MAX_VOICE_CLIP_PCM_BYTES) {
+    flushVoiceClip(context, session, userId, userState, 'max_duration');
+  }
+}
+
+function flushVoiceClip(context, session, userId, userState, reason) {
+  const recorder = userState.recorder;
+  if (!recorder?.bytes) return;
+
+  userState.recorder = createVoiceClipRecorder();
+  const pcm = Buffer.concat(recorder.chunks, recorder.bytes);
+  const durationMs = Math.round((pcm.length / (PCM_SAMPLE_RATE * PCM_CHANNELS * PCM_BYTES_PER_SAMPLE)) * 1000);
+  if (durationMs < 250) return;
+
+  const audio = encodeWav(pcm);
+  if (!context?.db) return;
+
+  context.db.query(
+    `
+    INSERT INTO remote_voice_clips (
+      guild_id, channel_id, user_id, content_type, byte_size, duration_ms,
+      transcript_status, audio
+    )
+    VALUES ($1, $2, $3, 'audio/wav', $4, $5, 'not_configured', $6)
+    `,
+    [session.guildId, session.channelId, userId, audio.length, durationMs, audio],
+  ).then(() => {
+    context.liveFeed.publish('remote.voice_clip_recorded', {
+      guildId: session.guildId,
+      channelId: session.channelId,
+      userId,
+      durationMs,
+      reason,
+    });
+  }).catch((error) => {
+    context.liveFeed.publish('remote.voice_clip_error', {
+      guildId: session.guildId,
+      userId,
+      error: String(error?.message || error),
+    }, 'error');
+  });
+}
+
+async function recordVoiceEvent(context, session, userId, eventType, details = {}) {
+  if (!context.db) return;
+  await context.db.query(
+    `
+    INSERT INTO remote_voice_events (guild_id, channel_id, user_id, event_type, details)
+    VALUES ($1, $2, $3, $4, $5)
+    `,
+    [session.guildId, session.channelId, userId, eventType, JSON.stringify(details)],
+  );
+  context.liveFeed.publish(`remote.voice_${eventType}`, {
+    guildId: session.guildId,
+    channelId: session.channelId,
+    userId,
+    ...details,
+  });
+}
+
+function encodeWav(pcm) {
+  const header = Buffer.alloc(44);
+  const byteRate = PCM_SAMPLE_RATE * PCM_CHANNELS * PCM_BYTES_PER_SAMPLE;
+  const blockAlign = PCM_CHANNELS * PCM_BYTES_PER_SAMPLE;
+
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(PCM_CHANNELS, 22);
+  header.writeUInt32LE(PCM_SAMPLE_RATE, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(PCM_BYTES_PER_SAMPLE * 8, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(pcm.length, 40);
+
+  return Buffer.concat([header, pcm], header.length + pcm.length);
 }
 
 function sanitizeFileName(value) {

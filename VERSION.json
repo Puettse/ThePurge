@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.3.4",
-  "codename": "Jellyfin Bot Catalogue",
+  "version": "4.3.5",
+  "codename": "Voice Receiver Bridge",
   "release_date": "2026-06-30",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -20,13 +20,15 @@
     "Scheduled purge command support and legacy interval migration",
     "Shared media purge service with permission checks, pagination, and honest delete counts",
     "Dashboard starts in degraded mode when bot, database, or required config is unavailable",
-    "Remote Ops can transmit dashboard microphone audio and browser-captured screen/app audio into Discord voice",
+    "Remote Ops uses hold-to-talk microphone audio and browser-captured screen/app audio into Discord voice",
+    "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser playback",
+    "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
     "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility",
     "Jellyfin movie catalogue access controls and Discord browse flow by genre, year, or actor"
   ],
   "next": [
     "Add richer Jellyfin playback actions once direct-play handling is defined",
-    "Add browser-playable inbound Discord voice monitoring through a receiver/decoder layer",
+    "Add speech-to-text provider integration for protected voice clip transcription",
     "Add dashboard form support for reaction-role message binding",
     "Expand ticket transcripts beyond the most recent 100 messages",
     "Add integration tests with mocked Discord and PostgreSQL clients"
