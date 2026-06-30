@@ -29,6 +29,20 @@ export async function migrate(db) {
   `);
 
   await db.query(`
+    DO $$
+    BEGIN
+      IF to_regclass('public.purge_configs') IS NOT NULL THEN
+        ALTER TABLE purge_configs
+          ADD COLUMN IF NOT EXISTS media_type TEXT DEFAULT 'all',
+          ADD COLUMN IF NOT EXISTS interval_seconds INTEGER DEFAULT 0,
+          ADD COLUMN IF NOT EXISTS last_run TIMESTAMPTZ DEFAULT NOW(),
+          ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+          ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+      END IF;
+    END$$;
+  `);
+
+  await db.query(`
     CREATE TABLE IF NOT EXISTS guilds (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,

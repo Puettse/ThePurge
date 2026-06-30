@@ -53,7 +53,7 @@ Copy `.env.example` and set equivalent Railway variables:
 | `CLIENT_ID` | Yes | Discord application client ID. |
 | `CLIENT_SECRET` | Dashboard | Discord OAuth secret for dashboard login. |
 | `DATABASE_URL` | Yes | PostgreSQL connection string. |
-| `PUBLIC_BASE_URL` | Dashboard | Public Railway URL, used for OAuth callback. |
+| `PUBLIC_BASE_URL` | Dashboard | Public Railway URL, used for OAuth callback. Defaults to `https://thepurge-production.up.railway.app` when not set. |
 | `SESSION_SECRET` | Dashboard | Long random string for dashboard cookies. |
 | `PORT` | Railway | HTTP port, defaults to `3000`. |
 | `NODE_ENV` | Recommended | Use `production` on Railway. |
@@ -61,7 +61,7 @@ Copy `.env.example` and set equivalent Railway variables:
 Dashboard OAuth callback URL:
 
 ```text
-https://your-railway-domain.up.railway.app/auth/callback
+https://thepurge-production.up.railway.app/auth/callback
 ```
 
 Railway deployment config is pinned in `railway.json`:
