@@ -5,6 +5,9 @@ const state = {
   me: null,
   guilds: [],
   overview: null,
+  remoteChannels: { textChannels: [], voiceChannels: [] },
+  remoteVoice: { connected: false, channelId: null, status: 'disconnected' },
+  remoteError: null,
 };
 
 const elements = {
@@ -20,6 +23,14 @@ const elements = {
   scheduleForm: document.querySelector('#scheduleForm'),
   ticketPanelForm: document.querySelector('#ticketPanelForm'),
   tickets: document.querySelector('#tickets'),
+  remoteMessageForm: document.querySelector('#remoteMessageForm'),
+  remoteTextChannel: document.querySelector('#remoteTextChannel'),
+  remoteFiles: document.querySelector('#remoteFiles'),
+  remoteMessageStatus: document.querySelector('#remoteMessageStatus'),
+  remoteVoiceForm: document.querySelector('#remoteVoiceForm'),
+  remoteVoiceChannel: document.querySelector('#remoteVoiceChannel'),
+  remoteVoiceLeaveButton: document.querySelector('#remoteVoiceLeaveButton'),
+  remoteVoiceStatus: document.querySelector('#remoteVoiceStatus'),
   logoutButton: document.querySelector('#logoutButton'),
 };
 
@@ -28,9 +39,11 @@ async function boot() {
   await refreshMe();
   bindForms();
   startFeed();
+  renderRemoteOps();
 
   if (state.me?.user) {
     await refreshGuilds();
+    if (!selectedGuildId) renderRemoteOps();
   }
 }
 
@@ -55,6 +68,7 @@ async function refreshGuilds() {
     button.textContent = `${guild.name}${guild.botPresent ? '' : ' (bot missing)'}`;
     button.onclick = async () => {
       selectedGuildId = guild.id;
+      setRemoteMessageStatus('');
       await refreshOverview();
       await refreshGuilds();
     };
@@ -70,11 +84,29 @@ async function refreshGuilds() {
 async function refreshOverview() {
   if (!selectedGuildId) return;
   state.overview = await api(`/api/guilds/${selectedGuildId}/overview`);
+  await refreshRemoteOps();
   renderOverview();
+}
+
+async function refreshRemoteOps() {
+  try {
+    const [channels, voice] = await Promise.all([
+      api(`/api/guilds/${selectedGuildId}/remote/channels`),
+      api(`/api/guilds/${selectedGuildId}/remote/voice`),
+    ]);
+    state.remoteChannels = channels;
+    state.remoteVoice = voice.voice;
+    state.remoteError = null;
+  } catch (error) {
+    state.remoteChannels = { textChannels: [], voiceChannels: [] };
+    state.remoteVoice = { connected: false, channelId: null, status: 'unavailable' };
+    state.remoteError = error.message;
+  }
 }
 
 function renderOverview() {
   renderModules();
+  renderRemoteOps();
   renderSettings();
   renderCommands();
   renderJobs();
@@ -101,6 +133,37 @@ function renderModules() {
     row.append(toggle);
     elements.modules.append(row);
   }
+}
+
+function renderRemoteOps() {
+  const textChannels = state.remoteChannels.textChannels || [];
+  const voiceChannels = state.remoteChannels.voiceChannels || [];
+
+  populateChannelSelect(elements.remoteTextChannel, textChannels, 'Select text channel');
+  populateChannelSelect(elements.remoteVoiceChannel, voiceChannels, 'Select voice channel');
+
+  const hasTextChannel = textChannels.length > 0;
+  const hasVoiceChannel = voiceChannels.length > 0;
+  elements.remoteMessageForm.querySelector('button[type="submit"]').disabled = !selectedGuildId || !hasTextChannel;
+  elements.remoteVoiceForm.querySelector('button[type="submit"]').disabled = !selectedGuildId || !hasVoiceChannel;
+  elements.remoteVoiceLeaveButton.disabled = !selectedGuildId;
+
+  if (state.remoteError) {
+    elements.remoteMessageStatus.textContent = state.remoteError;
+    elements.remoteVoiceStatus.textContent = state.remoteError;
+    return;
+  }
+
+  if (!hasTextChannel) {
+    elements.remoteMessageStatus.textContent = 'No text channels available.';
+  } else if (!elements.remoteMessageStatus.dataset.locked) {
+    elements.remoteMessageStatus.textContent = '';
+  }
+
+  const connectedChannel = voiceChannels.find((channel) => channel.id === state.remoteVoice.channelId);
+  elements.remoteVoiceStatus.textContent = state.remoteVoice.connected
+    ? `Connected to ${connectedChannel?.name || state.remoteVoice.channelId} (${state.remoteVoice.status})`
+    : 'Disconnected';
 }
 
 function renderSettings() {
@@ -177,6 +240,70 @@ function bindForms() {
   elements.logoutButton.onclick = async () => {
     await api('/auth/logout', { method: 'POST' });
     window.location.reload();
+  };
+
+  elements.remoteMessageForm.onsubmit = async (event) => {
+    event.preventDefault();
+    setRemoteMessageStatus('Sending...');
+
+    try {
+      requireGuildSelection();
+      const selectedChannelId = elements.remoteTextChannel.value;
+      const files = await readSelectedFiles(elements.remoteFiles.files);
+      const result = await api(`/api/guilds/${selectedGuildId}/remote/messages`, {
+        method: 'POST',
+        body: {
+          channelId: selectedChannelId,
+          content: elements.remoteMessageForm.content.value,
+          files,
+          allowMentions: elements.remoteMessageForm.allowMentions.checked,
+        },
+      });
+
+      elements.remoteMessageForm.reset();
+      elements.remoteTextChannel.value = selectedChannelId;
+      setRemoteMessageStatus(result.message);
+    } catch (error) {
+      setRemoteMessageStatus(error.message);
+    }
+  };
+
+  elements.remoteVoiceForm.onsubmit = async (event) => {
+    event.preventDefault();
+    elements.remoteVoiceStatus.textContent = 'Connecting...';
+
+    try {
+      requireGuildSelection();
+      const result = await api(`/api/guilds/${selectedGuildId}/remote/voice/join`, {
+        method: 'POST',
+        body: {
+          channelId: elements.remoteVoiceChannel.value,
+          selfMute: elements.remoteVoiceForm.selfMute.checked,
+          selfDeaf: elements.remoteVoiceForm.selfDeaf.checked,
+        },
+      });
+      state.remoteVoice = result.voice;
+      elements.remoteVoiceStatus.textContent = result.message;
+      await refreshRemoteOps();
+      renderRemoteOps();
+    } catch (error) {
+      elements.remoteVoiceStatus.textContent = error.message;
+    }
+  };
+
+  elements.remoteVoiceLeaveButton.onclick = async () => {
+    elements.remoteVoiceStatus.textContent = 'Disconnecting...';
+
+    try {
+      requireGuildSelection();
+      const result = await api(`/api/guilds/${selectedGuildId}/remote/voice/leave`, { method: 'POST' });
+      state.remoteVoice = result.voice;
+      elements.remoteVoiceStatus.textContent = result.message;
+      await refreshRemoteOps();
+      renderRemoteOps();
+    } catch (error) {
+      elements.remoteVoiceStatus.textContent = error.message;
+    }
   };
 
   elements.settingsForm.onsubmit = async (event) => {
@@ -272,6 +399,57 @@ function addEvent(event) {
   row.textContent = `${event.createdAt} ${event.type}\n${JSON.stringify(event.payload)}`;
   elements.feed.prepend(row);
   while (elements.feed.children.length > 80) elements.feed.lastChild.remove();
+}
+
+function populateChannelSelect(select, channels, placeholder) {
+  const previousValue = select.value;
+  select.innerHTML = '';
+
+  const placeholderOption = document.createElement('option');
+  placeholderOption.value = '';
+  placeholderOption.textContent = placeholder;
+  select.append(placeholderOption);
+
+  for (const channel of channels) {
+    const option = document.createElement('option');
+    option.value = channel.id;
+    option.textContent = channel.name;
+    select.append(option);
+  }
+
+  if (channels.some((channel) => channel.id === previousValue)) {
+    select.value = previousValue;
+  } else if (channels[0]) {
+    select.value = channels[0].id;
+  }
+}
+
+async function readSelectedFiles(fileList) {
+  const files = Array.from(fileList || []);
+  return Promise.all(files.map(readFileAsBase64));
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.onload = () => {
+      const dataBase64 = String(reader.result || '').split(',')[1] || '';
+      resolve({ name: file.name, dataBase64 });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setRemoteMessageStatus(message) {
+  elements.remoteMessageStatus.dataset.locked = message ? 'true' : '';
+  elements.remoteMessageStatus.textContent = message;
+}
+
+function requireGuildSelection() {
+  if (!selectedGuildId) {
+    throw new Error('Select a server first.');
+  }
 }
 
 async function api(path, options = {}) {

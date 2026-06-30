@@ -30,6 +30,33 @@
           <div id="modules" class="modules"></div>
         </section>
 
+        <section class="panel">
+          <h2>Remote Ops</h2>
+          <div class="grid">
+            <form id="remoteMessageForm">
+              <h3>Send Message</h3>
+              <label>Text Channel <select id="remoteTextChannel" name="channelId" required></select></label>
+              <label>Message <textarea name="content" rows="5" maxlength="2000"></textarea></label>
+              <label>Files <input id="remoteFiles" name="files" type="file" multiple></label>
+              <label class="check"><input type="checkbox" name="allowMentions"> Allow mentions</label>
+              <button type="submit">Send</button>
+              <p id="remoteMessageStatus" class="status-note"></p>
+            </form>
+
+            <form id="remoteVoiceForm">
+              <h3>Voice Remote</h3>
+              <label>Voice Channel <select id="remoteVoiceChannel" name="channelId" required></select></label>
+              <label class="check"><input type="checkbox" name="selfMute"> Self mute</label>
+              <label class="check"><input type="checkbox" name="selfDeaf"> Self deaf</label>
+              <div class="form-actions">
+                <button type="submit">Join</button>
+                <button id="remoteVoiceLeaveButton" class="secondary" type="button">Leave</button>
+              </div>
+              <p id="remoteVoiceStatus" class="status-note"></p>
+            </form>
+          </div>
+        </section>
+
         <section class="panel grid">
           <form id="settingsForm">
             <h2>Settings</h2>

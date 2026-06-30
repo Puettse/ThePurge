@@ -26,7 +26,8 @@ body {
 }
 
 h1,
-h2 {
+h2,
+h3 {
   margin: 0;
   font-weight: 700;
 }
@@ -38,6 +39,10 @@ h1 {
 h2 {
   font-size: 16px;
   margin-bottom: 12px;
+}
+
+h3 {
+  font-size: 14px;
 }
 
 p {
@@ -64,6 +69,11 @@ button,
 
 button.secondary {
   background: #30343d;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .actions {
@@ -158,7 +168,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid #343a46;
   border-radius: 6px;
@@ -170,6 +181,17 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-note {
+  min-height: 20px;
+  font-size: 13px;
 }
 
 .feed {

@@ -17,7 +17,7 @@ export function createDashboardServer(context) {
 
   app.disable('x-powered-by');
   app.locals.liveFeed = context.liveFeed;
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '12mb' }));
   app.use(cookieParser());
   app.use(express.static(publicDir));
 

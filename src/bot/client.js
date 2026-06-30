@@ -8,6 +8,7 @@ export function createDiscordClient() {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [
       Partials.Message,
