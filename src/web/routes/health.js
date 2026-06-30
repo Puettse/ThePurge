@@ -20,7 +20,10 @@ export function createHealthSnapshot(context, auth) {
       connected: Boolean(database.connected),
       error: database.error || null,
     },
-    dashboard: { authConfigured: auth.isConfigured() },
+    dashboard: {
+      authConfigured: auth.isConfigured(),
+      missingConfig: typeof auth.missingConfig === 'function' ? auth.missingConfig() : [],
+    },
     config: {
       ready: missingRequired.length === 0,
       missingRequired,

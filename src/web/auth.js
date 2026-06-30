@@ -6,8 +6,18 @@ const sessions = new Map();
 export function createAuth(config) {
   const cookieName = 'thepurge_session';
 
+  function missingConfig() {
+    return [
+      ['CLIENT_ID', config.clientId],
+      ['CLIENT_SECRET', config.clientSecret],
+      ['PUBLIC_BASE_URL', config.publicBaseUrl],
+    ]
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+  }
+
   function isConfigured() {
-    return Boolean(config.clientId && config.clientSecret && config.publicBaseUrl);
+    return missingConfig().length === 0;
   }
 
   function sign(value) {
@@ -49,8 +59,9 @@ export function createAuth(config) {
   }
 
   async function login(req, res) {
-    if (!isConfigured()) {
-      res.status(503).send('Discord OAuth is not configured. Set CLIENT_SECRET and PUBLIC_BASE_URL.');
+    const missing = missingConfig();
+    if (missing.length > 0) {
+      res.status(503).send(`Discord OAuth is not configured. Set ${missing.join(', ')}.`);
       return;
     }
 
@@ -126,8 +137,9 @@ export function createAuth(config) {
   }
 
   function requireAuth(req, res, next) {
-    if (!isConfigured()) {
-      res.status(503).json({ error: 'Dashboard OAuth is not configured.', authConfigured: false });
+    const missing = missingConfig();
+    if (missing.length > 0) {
+      res.status(503).json({ error: 'Dashboard OAuth is not configured.', authConfigured: false, missingConfig: missing });
       return;
     }
 
@@ -141,7 +153,7 @@ export function createAuth(config) {
     next();
   }
 
-  return { isConfigured, login, callback, logout, requireAuth, readCookie };
+  return { isConfigured, missingConfig, login, callback, logout, requireAuth, readCookie };
 }
 
 export function canManageGuild(guild) {
