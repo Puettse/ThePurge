@@ -34,11 +34,13 @@ Last updated: 2026-06-28
 - `src/services/scheduler.js` runs recurring message and purge jobs.
 - `src/services/schedulerTasks.js` contains scheduler task helpers.
 - `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
+- `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, and dashboard audio transmission.
 
 ## Dashboard
 
 - `src/web/server.js` serves static dashboard files and JSON/SSE APIs.
 - `src/web/auth.js` handles Discord OAuth and signed HTTP-only dashboard sessions.
+- `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades and streams browser audio into Discord voice.
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
 - `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
 - `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, and tickets.
@@ -52,7 +54,7 @@ Last updated: 2026-06-28
 
 ## Important Operational Notes
 
-- The local folder is a Git checkout on branch `codex/all-in-one-dashboard-ticketing`.
+- The local folder is a Git checkout on branch `main`.
 - Runtime requires `BOT_TOKEN`, `CLIENT_ID`, and `DATABASE_URL`.
 - Dashboard OAuth requires `CLIENT_SECRET`, `PUBLIC_BASE_URL`, and `SESSION_SECRET`.
 - Full validation requires successful npm dependency installation.

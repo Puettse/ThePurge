@@ -1,8 +1,8 @@
 {
   "name": "ThePurge",
-  "version": "4.3.1",
-  "codename": "Dashboard Resilience",
-  "release_date": "2026-06-28",
+  "version": "4.3.2",
+  "codename": "Remote Voice Bridge",
+  "release_date": "2026-06-30",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
   "license": "MIT",
@@ -19,10 +19,11 @@
     "Ticket panel, private ticket channel, claim, close, and transcript workflow",
     "Scheduled purge command support and legacy interval migration",
     "Shared media purge service with permission checks, pagination, and honest delete counts",
-    "Dashboard starts in degraded mode when bot, database, or required config is unavailable"
+    "Dashboard starts in degraded mode when bot, database, or required config is unavailable",
+    "Remote Ops can transmit dashboard microphone audio and browser-captured screen/app audio into Discord voice"
   ],
   "next": [
-    "Validate live Railway OAuth callback and deployment variables",
+    "Add browser-playable inbound Discord voice monitoring through a receiver/decoder layer",
     "Add dashboard form support for reaction-role message binding",
     "Expand ticket transcripts beyond the most recent 100 messages",
     "Add integration tests with mocked Discord and PostgreSQL clients"

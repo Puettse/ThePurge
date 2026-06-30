@@ -1,5 +1,14 @@
 import { AttachmentBuilder, ChannelType, PermissionsBitField } from 'discord.js';
-import { entersState, getVoiceConnection, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
+import {
+  createAudioPlayer,
+  createAudioResource,
+  entersState,
+  getVoiceConnection,
+  joinVoiceChannel,
+  NoSubscriberBehavior,
+  StreamType,
+  VoiceConnectionStatus,
+} from '@discordjs/voice';
 
 export const MAX_REMOTE_MESSAGE_LENGTH = 2000;
 export const MAX_REMOTE_FILES = 5;
@@ -17,6 +26,8 @@ const VOICE_CHANNEL_TYPES = new Set([
   ChannelType.GuildVoice,
   ChannelType.GuildStageVoice,
 ]);
+
+const remoteMicSessions = new Map();
 
 export async function listRemoteChannels(guild) {
   const channels = await guild.channels.fetch();
@@ -53,18 +64,32 @@ export async function listRemoteChannels(guild) {
 
 export function getRemoteVoiceStatus(guild) {
   const connection = getVoiceConnection(guild.id);
+  const micSession = remoteMicSessions.get(guild.id);
   if (!connection) {
+    if (micSession) stopRemoteMicSession(guild.id, micSession);
     return {
       connected: false,
       channelId: null,
       status: 'disconnected',
+      selfMute: false,
+      selfDeaf: false,
+      transmitting: false,
     };
+  }
+
+  if (connection.state.status === VoiceConnectionStatus.Destroyed && micSession) {
+    stopRemoteMicSession(guild.id, micSession);
   }
 
   return {
     connected: connection.state.status !== VoiceConnectionStatus.Destroyed,
     channelId: connection.joinConfig.channelId || null,
     status: connection.state.status,
+    selfMute: Boolean(connection.joinConfig.selfMute),
+    selfDeaf: Boolean(connection.joinConfig.selfDeaf),
+    transmitting: Boolean(remoteMicSessions.get(guild.id)),
+    audioStartedAt: remoteMicSessions.get(guild.id)?.startedAt || null,
+    audioActorId: remoteMicSessions.get(guild.id)?.actorId || null,
   };
 }
 
@@ -160,6 +185,98 @@ export async function joinRemoteVoiceChannel(context, guild, actor, body) {
   };
 }
 
+export async function startRemoteMicStream(context, guild, actor, pcmStream, options = {}) {
+  const connection = getVoiceConnection(guild.id);
+  if (!connection || connection.state.status === VoiceConnectionStatus.Destroyed) {
+    throw new RemoteValidationError('Join a voice channel before starting dashboard audio.');
+  }
+
+  const existing = remoteMicSessions.get(guild.id);
+  if (existing) stopRemoteMicSession(guild.id, existing);
+
+  const player = createAudioPlayer({
+    behaviors: {
+      noSubscriber: NoSubscriberBehavior.Play,
+    },
+  });
+  const resource = createAudioResource(pcmStream, {
+    inputType: StreamType.Raw,
+  });
+  const subscription = connection.subscribe(player);
+
+  if (!subscription) {
+    player.stop(true);
+    throw new RemoteValidationError('The bot could not attach dashboard audio to the voice connection.');
+  }
+
+  const session = {
+    actorId: actor.id,
+    player,
+    source: options.source || 'dashboard',
+    startedAt: new Date().toISOString(),
+    stream: pcmStream,
+    subscription,
+  };
+
+  player.on('error', (error) => {
+    context.liveFeed.publish('remote.voice_audio_error', {
+      guildId: guild.id,
+      actorId: actor.id,
+      error: String(error?.message || error),
+    }, 'error');
+  });
+
+  remoteMicSessions.set(guild.id, session);
+  player.play(resource);
+
+  await recordRemoteAudit(context, {
+    guildId: guild.id,
+    actorId: actor.id,
+    targetId: connection.joinConfig.channelId || null,
+    action: 'remote.voice_audio_started',
+    details: {
+      channelId: connection.joinConfig.channelId || null,
+      source: session.source,
+    },
+  });
+
+  return {
+    ok: true,
+    message: 'Dashboard audio is live in voice.',
+    voice: getRemoteVoiceStatus(guild),
+  };
+}
+
+export async function stopRemoteMicStream(context, guild, actor, options = {}) {
+  const session = remoteMicSessions.get(guild.id);
+  if (!session) {
+    return {
+      ok: true,
+      message: 'Dashboard audio is already stopped.',
+      voice: getRemoteVoiceStatus(guild),
+    };
+  }
+
+  stopRemoteMicSession(guild.id, session);
+
+  await recordRemoteAudit(context, {
+    guildId: guild.id,
+    actorId: actor.id,
+    targetId: getVoiceConnection(guild.id)?.joinConfig.channelId || null,
+    action: 'remote.voice_audio_stopped',
+    details: {
+      reason: options.reason || 'dashboard',
+      source: session.source,
+    },
+  });
+
+  return {
+    ok: true,
+    message: 'Dashboard audio stopped.',
+    voice: getRemoteVoiceStatus(guild),
+  };
+}
+
 export async function leaveRemoteVoiceChannel(context, guild, actor) {
   const connection = getVoiceConnection(guild.id);
   if (!connection) {
@@ -171,6 +288,8 @@ export async function leaveRemoteVoiceChannel(context, guild, actor) {
   }
 
   const channelId = connection.joinConfig.channelId || null;
+  const micSession = remoteMicSessions.get(guild.id);
+  if (micSession) stopRemoteMicSession(guild.id, micSession);
   connection.destroy();
 
   await recordRemoteAudit(context, {
@@ -294,4 +413,13 @@ function sanitizeFileName(value) {
 
 function formatBytes(bytes) {
   return `${Math.floor(bytes / 1024 / 1024)} MB`;
+}
+
+function stopRemoteMicSession(guildId, session) {
+  remoteMicSessions.delete(guildId);
+  session.player.stop(true);
+  session.subscription.unsubscribe?.();
+  if (typeof session.stream.destroy === 'function') {
+    session.stream.destroy();
+  }
 }

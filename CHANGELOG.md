@@ -2,6 +2,23 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.2] - 2026-06-30
+
+### Added
+
+- Added an authenticated Remote Ops audio WebSocket for transmitting dashboard audio into the bot's current Discord voice connection.
+- Added dashboard microphone controls, screen/app capture controls, captured-audio mixing, source display, and local screen preview.
+- Added Remote Ops voice status fields for self mute, self deaf, and active dashboard audio transmission.
+
+### Changed
+
+- Directly declared `ws` as a runtime dependency for dashboard audio sockets.
+
+### Known Issues
+
+- Incoming Discord voice monitoring still requires a browser-playable receiver/decoder layer.
+- Discord bot accounts cannot perform true video screen sharing through the official bot voice API; the dashboard can preview captured video locally and transmit captured audio when the browser exposes it.
+
 ## [4.3.1] - 2026-06-28
 
 ### Fixed

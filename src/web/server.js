@@ -6,6 +6,7 @@ import { createAuth } from './auth.js';
 import { createCoreRouter } from './routes/core.js';
 import { createGuildRouter } from './routes/guilds.js';
 import { createHealthSnapshot } from './routes/health.js';
+import { createRemoteVoiceBridge } from './remoteVoiceBridge.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, '../../public');
@@ -13,6 +14,7 @@ const publicDir = path.resolve(__dirname, '../../public');
 export function createDashboardServer(context) {
   const app = express();
   const auth = createAuth(context.config);
+  const remoteVoiceBridge = createRemoteVoiceBridge(context, auth);
   let server = null;
 
   app.disable('x-powered-by');
@@ -42,9 +44,11 @@ export function createDashboardServer(context) {
     app,
     listen(port, callback) {
       server = app.listen(port, callback);
+      remoteVoiceBridge.attach(server);
       return server;
     },
     close() {
+      remoteVoiceBridge.close();
       if (server) server.close();
     },
   };

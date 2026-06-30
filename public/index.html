@@ -53,6 +53,22 @@
                 <button id="remoteVoiceLeaveButton" class="secondary" type="button">Leave</button>
               </div>
               <p id="remoteVoiceStatus" class="status-note"></p>
+              <div class="voice-tools">
+                <h4>Audio Bridge</h4>
+                <div class="form-actions">
+                  <button id="remoteMicStartButton" class="secondary" type="button">Start Mic</button>
+                  <button id="remoteMicStopButton" class="secondary" type="button">Stop Mic</button>
+                </div>
+                <label class="check"><input id="remoteScreenAudio" type="checkbox" checked> Share screen audio</label>
+                <label>Screen/App Source <select id="remoteScreenSource" disabled><option>No source selected</option></select></label>
+                <div class="form-actions">
+                  <button id="remoteScreenStartButton" class="secondary" type="button">Choose Screen/App</button>
+                  <button id="remoteScreenStopButton" class="secondary" type="button">Stop Share</button>
+                </div>
+                <video id="remoteScreenPreview" class="screen-preview" muted playsinline></video>
+                <p id="remoteAudioStatus" class="status-note"></p>
+                <p id="remoteInboundStatus" class="status-note muted">Incoming voice feed requires a receiver/decoder layer.</p>
+              </div>
             </form>
           </div>
         </section>
