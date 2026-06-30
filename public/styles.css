@@ -113,6 +113,18 @@ button:disabled {
   padding: 16px;
 }
 
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-heading h2 {
+  margin-bottom: 0;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -137,6 +149,50 @@ button:disabled {
 .item button {
   min-height: 30px;
   padding: 0 10px;
+}
+
+.compact-list {
+  margin-top: 10px;
+}
+
+.compact-list .item {
+  display: grid;
+  gap: 4px;
+}
+
+.item small {
+  color: #8f97a5;
+  font-size: 12px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.metric-card {
+  display: grid;
+  gap: 4px;
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid #303640;
+  border-radius: 6px;
+  background: #20242c;
+}
+
+.metric-card span {
+  color: #8f97a5;
+  font-size: 12px;
+}
+
+.metric-card strong {
+  font-size: 18px;
+}
+
+.integration-grid {
+  margin: 12px 0;
 }
 
 .modules {

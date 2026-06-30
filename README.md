@@ -16,6 +16,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Ticketing control inspired by ticket panel workflows: panel creation, private ticket channels, staff roles, claim, close, and stored transcripts.
 - Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
+- Jellyfin dashboard access: server-side API calls expose system status, libraries, active sessions, and recent activity without sending the API key to the browser.
 
 ## Module Isolation Rule
 
@@ -55,6 +56,8 @@ Copy `.env.example` and set equivalent Railway variables:
 | `DATABASE_URL` | Yes | PostgreSQL connection string. |
 | `PUBLIC_BASE_URL` | Dashboard | Public Railway URL, used for OAuth callback. Defaults to `https://thepurge-production.up.railway.app` when not set. |
 | `SESSION_SECRET` | Dashboard | Long random string for dashboard cookies. |
+| `JELLYFIN_BASE_URL` | Jellyfin | Public or Railway-reachable Jellyfin server URL. |
+| `JELLYFIN_API_KEY` | Jellyfin | Jellyfin API key used only by the server-side dashboard proxy. |
 | `PORT` | Railway | HTTP port, defaults to `3000`. |
 | `NODE_ENV` | Recommended | Use `production` on Railway. |
 

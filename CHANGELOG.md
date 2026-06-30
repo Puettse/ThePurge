@@ -2,6 +2,19 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.3] - 2026-06-30
+
+### Added
+
+- Added server-side Jellyfin API access using `JELLYFIN_BASE_URL` and `JELLYFIN_API_KEY`.
+- Added a protected dashboard Jellyfin panel for server status, libraries, active sessions, and recent activity.
+- Added `/api/guilds/:guildId/jellyfin/status` behind Discord dashboard authentication and Manage Server access.
+- Added tests for Jellyfin config handling, URL normalization, endpoint calls, and auth headers.
+
+### Changed
+
+- Extended health output with Jellyfin integration configuration status.
+
 ## [4.3.2] - 2026-06-30
 
 ### Added

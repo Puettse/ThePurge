@@ -11,6 +11,7 @@ const state = {
   remoteChannels: { textChannels: [], voiceChannels: [] },
   remoteVoice: { connected: false, channelId: null, status: 'disconnected' },
   remoteError: null,
+  jellyfin: null,
 };
 
 const voiceCapture = {
@@ -54,6 +55,13 @@ const elements = {
   remoteScreenPreview: document.querySelector('#remoteScreenPreview'),
   remoteAudioStatus: document.querySelector('#remoteAudioStatus'),
   remoteInboundStatus: document.querySelector('#remoteInboundStatus'),
+  jellyfinRefreshButton: document.querySelector('#jellyfinRefreshButton'),
+  jellyfinStatus: document.querySelector('#jellyfinStatus'),
+  jellyfinSummary: document.querySelector('#jellyfinSummary'),
+  jellyfinLibraries: document.querySelector('#jellyfinLibraries'),
+  jellyfinSessions: document.querySelector('#jellyfinSessions'),
+  jellyfinActivity: document.querySelector('#jellyfinActivity'),
+  jellyfinErrors: document.querySelector('#jellyfinErrors'),
   logoutButton: document.querySelector('#logoutButton'),
 };
 
@@ -63,6 +71,7 @@ async function boot() {
   bindForms();
   startFeed();
   renderRemoteOps();
+  renderJellyfin();
 
   if (state.me?.user) {
     await refreshGuilds();
@@ -108,7 +117,10 @@ async function refreshGuilds() {
 async function refreshOverview() {
   if (!selectedGuildId) return;
   state.overview = await api(`/api/guilds/${selectedGuildId}/overview`);
-  await refreshRemoteOps();
+  await Promise.all([
+    refreshRemoteOps(),
+    refreshJellyfin(),
+  ]);
   renderOverview();
 }
 
@@ -131,6 +143,7 @@ async function refreshRemoteOps() {
 function renderOverview() {
   renderModules();
   renderRemoteOps();
+  renderJellyfin();
   renderSettings();
   renderCommands();
   renderJobs();
@@ -190,6 +203,103 @@ function renderRemoteOps() {
     ? `Connected to ${connectedChannel?.name || state.remoteVoice.channelId} (${state.remoteVoice.status})`
     : 'Disconnected';
   updateVoiceCaptureControls();
+}
+
+async function refreshJellyfin() {
+  if (!selectedGuildId) {
+    state.jellyfin = null;
+    return;
+  }
+
+  try {
+    state.jellyfin = await api(`/api/guilds/${selectedGuildId}/jellyfin/status`);
+  } catch (error) {
+    state.jellyfin = { ok: false, configured: false, error: error.message, missingConfig: [] };
+  }
+}
+
+function renderJellyfin() {
+  elements.jellyfinSummary.innerHTML = '';
+  elements.jellyfinLibraries.innerHTML = '';
+  elements.jellyfinSessions.innerHTML = '';
+  elements.jellyfinActivity.innerHTML = '';
+  elements.jellyfinErrors.textContent = '';
+  elements.jellyfinRefreshButton.disabled = !selectedGuildId;
+
+  if (!selectedGuildId) {
+    elements.jellyfinStatus.textContent = 'Select a server to load Jellyfin status.';
+    return;
+  }
+
+  const jellyfin = state.jellyfin;
+  if (!jellyfin) {
+    elements.jellyfinStatus.textContent = 'Loading Jellyfin status...';
+    return;
+  }
+
+  if (jellyfin.error) {
+    elements.jellyfinStatus.textContent = jellyfin.error;
+    return;
+  }
+
+  if (!jellyfin.configured) {
+    elements.jellyfinStatus.textContent = `Not configured. Missing ${jellyfin.missingConfig.join(', ')}.`;
+    appendMetrics([
+      ['Host', jellyfin.baseUrl || 'Not set'],
+      ['API', 'Not connected'],
+    ]);
+    return;
+  }
+
+  const sectionErrors = jellyfin.sectionErrors || {};
+  const system = jellyfin.system || jellyfin.publicInfo || {};
+  elements.jellyfinStatus.textContent = jellyfin.ok
+    ? `Connected to ${system.name || 'Jellyfin'}${system.version ? ` ${system.version}` : ''}.`
+    : 'Jellyfin configured, but system info failed.';
+
+  appendMetrics([
+    ['Host', jellyfin.baseUrl],
+    ['Server', system.name || 'Unknown'],
+    ['Version', system.version || 'Unknown'],
+    ['Libraries', String((jellyfin.libraries || []).length)],
+    ['Active Sessions', String((jellyfin.sessions || []).length)],
+  ]);
+
+  appendList(
+    elements.jellyfinLibraries,
+    jellyfin.libraries || [],
+    (library) => ({
+      title: library.name,
+      detail: `${library.collectionType || 'library'} | ${library.itemCount || 0} items | ${library.pathCount || 0} paths`,
+    }),
+    'No libraries returned.',
+  );
+
+  appendList(
+    elements.jellyfinSessions,
+    jellyfin.sessions || [],
+    (session) => ({
+      title: [session.userName, session.client, session.deviceName].filter(Boolean).join(' | ') || 'Unknown session',
+      detail: session.nowPlaying
+        ? `Now playing: ${session.nowPlaying.name || 'Unknown'}${session.playState?.paused ? ' (paused)' : ''}`
+        : `Last active: ${formatDate(session.lastActivityDate)}`,
+    }),
+    'No active sessions returned.',
+  );
+
+  appendList(
+    elements.jellyfinActivity,
+    jellyfin.activity || [],
+    (activity) => ({
+      title: activity.name || activity.type || 'Activity',
+      detail: [activity.severity, activity.userName, formatDate(activity.date), activity.overview].filter(Boolean).join(' | '),
+    }),
+    'No recent activity returned.',
+  );
+
+  elements.jellyfinErrors.textContent = Object.entries(sectionErrors)
+    .map(([section, message]) => `${section}: ${message}`)
+    .join(' | ');
 }
 
 function renderSettings() {
@@ -345,6 +455,11 @@ function bindForms() {
   };
   elements.remoteScreenAudio.onchange = () => {
     refreshAudioBridge().catch((error) => setRemoteAudioStatus(error.message));
+  };
+  elements.jellyfinRefreshButton.onclick = async () => {
+    elements.jellyfinStatus.textContent = 'Refreshing Jellyfin...';
+    await refreshJellyfin();
+    renderJellyfin();
   };
 
   elements.settingsForm.onsubmit = async (event) => {
@@ -844,6 +959,51 @@ function updateVoiceCaptureControls() {
 
 function setRemoteAudioStatus(message) {
   elements.remoteAudioStatus.textContent = message;
+}
+
+function appendMetrics(metrics) {
+  elements.jellyfinSummary.innerHTML = '';
+  for (const [label, value] of metrics) {
+    const card = document.createElement('div');
+    card.className = 'metric-card';
+    const labelElement = document.createElement('span');
+    labelElement.textContent = label;
+    const valueElement = document.createElement('strong');
+    valueElement.textContent = value || 'Unknown';
+    card.append(labelElement, valueElement);
+    elements.jellyfinSummary.append(card);
+  }
+}
+
+function appendList(container, items, renderItem, emptyText) {
+  container.innerHTML = '';
+
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'item';
+    empty.textContent = emptyText;
+    container.append(empty);
+    return;
+  }
+
+  for (const item of items) {
+    const rendered = renderItem(item);
+    const row = document.createElement('div');
+    row.className = 'item';
+    const title = document.createElement('strong');
+    title.textContent = rendered.title || 'Unknown';
+    const detail = document.createElement('small');
+    detail.textContent = rendered.detail || '';
+    row.append(title, detail);
+    container.append(row);
+  }
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString();
 }
 
 function requireGuildSelection() {

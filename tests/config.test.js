@@ -14,3 +14,13 @@ test('loadConfig still prefers explicit public dashboard URLs', () => {
 
   assert.equal(config.publicBaseUrl, 'https://custom.example.com');
 });
+
+test('loadConfig normalizes optional Jellyfin API configuration', () => {
+  const config = loadConfig({
+    JELLYFIN_BASE_URL: 'https://media.example.com///',
+    JELLYFIN_API_KEY: 'jellyfin-key',
+  }, { allowPartial: true });
+
+  assert.equal(config.jellyfinBaseUrl, 'https://media.example.com');
+  assert.equal(config.jellyfinApiKey, 'jellyfin-key');
+});

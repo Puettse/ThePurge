@@ -18,6 +18,8 @@ export function loadConfig(env = process.env, options = {}) {
     clientSecret: env.CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || env.BOT_TOKEN || 'local-dashboard-session-secret',
     publicBaseUrl: resolvePublicBaseUrl(env, options),
+    jellyfinBaseUrl: normalizeBaseUrl(env.JELLYFIN_BASE_URL || ''),
+    jellyfinApiKey: env.JELLYFIN_API_KEY || '',
     port: Number.parseInt(env.PORT || '3000', 10),
     nodeEnv: env.NODE_ENV || 'development',
     missingRequired: missing,

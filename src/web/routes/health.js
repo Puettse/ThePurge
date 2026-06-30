@@ -6,6 +6,9 @@ export function createHealthSnapshot(context, auth) {
   const missingRequired = context.config?.missingRequired || [];
   const database = runtime.database || {};
   const discord = runtime.discord || {};
+  const jellyfinMissing = [];
+  if (!context.config?.jellyfinBaseUrl) jellyfinMissing.push('JELLYFIN_BASE_URL');
+  if (!context.config?.jellyfinApiKey) jellyfinMissing.push('JELLYFIN_API_KEY');
 
   return {
     ok: missingRequired.length === 0 && !database.error && !discord.error,
@@ -23,6 +26,13 @@ export function createHealthSnapshot(context, auth) {
     dashboard: {
       authConfigured: auth.isConfigured(),
       missingConfig: typeof auth.missingConfig === 'function' ? auth.missingConfig() : [],
+    },
+    integrations: {
+      jellyfin: {
+        configured: jellyfinMissing.length === 0,
+        baseUrl: context.config?.jellyfinBaseUrl || null,
+        missingConfig: jellyfinMissing,
+      },
     },
     config: {
       ready: missingRequired.length === 0,
