@@ -2,6 +2,15 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.6] - 2026-06-30
+
+### Fixed
+
+- Added an IPv4 loopback retry for local Jellyfin servers configured as `http://localhost:8096`.
+- Changed Jellyfin catalogue failures to return structured dashboard errors instead of generic dashboard request failures.
+- Added clearer Railway guidance when `JELLYFIN_BASE_URL` points at a loopback host.
+- Deduplicated repeated Jellyfin section errors in the dashboard.
+
 ## [4.3.5] - 2026-06-30
 
 ### Added

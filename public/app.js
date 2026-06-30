@@ -360,9 +360,7 @@ function renderJellyfin() {
     'No recent activity returned.',
   );
 
-  elements.jellyfinErrors.textContent = Object.entries(sectionErrors)
-    .map(([section, message]) => `${section}: ${message}`)
-    .join(' | ');
+  elements.jellyfinErrors.textContent = formatSectionErrors(sectionErrors);
 }
 
 function renderJellyfinCatalog() {
@@ -1398,6 +1396,19 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleString();
+}
+
+function formatSectionErrors(sectionErrors = {}) {
+  const seenMessages = new Set();
+  return Object.entries(sectionErrors)
+    .filter(([, message]) => {
+      const key = String(message || '');
+      if (!key || seenMessages.has(key)) return false;
+      seenMessages.add(key);
+      return true;
+    })
+    .map(([section, message]) => `${section}: ${message}`)
+    .join(' | ');
 }
 
 function getFilteredJellyfinCatalogItems() {

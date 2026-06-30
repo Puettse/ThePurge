@@ -1,7 +1,7 @@
 export const JELLYFIN_CLIENT_NAME = 'ThePurge';
 export const JELLYFIN_DEVICE_NAME = 'Railway Dashboard';
 export const JELLYFIN_DEVICE_ID = 'thepurge-dashboard';
-export const JELLYFIN_CLIENT_VERSION = '4.3.4';
+export const JELLYFIN_CLIENT_VERSION = '4.3.6';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const CATALOG_PAGE_SIZE = 200;
@@ -67,6 +67,7 @@ export async function getJellyfinSnapshot(config, options = {}) {
 
 export async function getJellyfinCatalogForGuild(context, guildId, options = {}) {
   const status = getJellyfinConfigStatus(context.config);
+  const checkedAt = new Date().toISOString();
   if (!status.configured) {
     return {
       ok: false,
@@ -74,19 +75,32 @@ export async function getJellyfinCatalogForGuild(context, guildId, options = {})
       items: [],
       total: 0,
       enabledCount: 0,
-      checkedAt: new Date().toISOString(),
+      checkedAt,
     };
   }
 
-  const items = await getJellyfinMovieCatalog(context.config, options);
-  const mergedItems = await mergeCatalogAccess(context.db, guildId, items);
+  let mergedItems;
+  try {
+    const items = await getJellyfinMovieCatalog(context.config, options);
+    mergedItems = await mergeCatalogAccess(context.db, guildId, items);
+  } catch (error) {
+    return {
+      ok: false,
+      ...status,
+      items: [],
+      total: 0,
+      enabledCount: 0,
+      checkedAt,
+      error: String(error?.message || error),
+    };
+  }
 
   return {
     ok: true,
     ...status,
     total: mergedItems.length,
     enabledCount: mergedItems.filter((item) => item.enabled).length,
-    checkedAt: new Date().toISOString(),
+    checkedAt,
     items: mergedItems,
   };
 }
@@ -335,18 +349,34 @@ async function jellyfinRequest(config, path, query = {}, options = {}) {
   const timeoutMs = Number(options.timeoutMs || DEFAULT_TIMEOUT_MS);
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const response = await fetchImpl(url, {
-      headers: jellyfinHeaders(config.jellyfinApiKey),
-      signal: controller.signal,
-    });
+  const urls = [url];
+  const localhostFallbackUrl = createLocalhostIpv4FallbackUrl(url);
+  if (localhostFallbackUrl) urls.push(localhostFallbackUrl);
 
-    if (!response.ok) {
-      throw new JellyfinApiError(`Jellyfin request failed: ${response.status} ${response.statusText}`.trim(), response.status);
+  try {
+    let lastNetworkError = null;
+
+    for (const requestUrl of urls) {
+      try {
+        const response = await fetchImpl(requestUrl, {
+          headers: jellyfinHeaders(config.jellyfinApiKey),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new JellyfinApiError(`Jellyfin request failed: ${response.status} ${response.statusText}`.trim(), response.status);
+        }
+
+        if (response.status === 204) return null;
+        return response.json();
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error;
+        if (error instanceof JellyfinApiError) throw error;
+        lastNetworkError = error;
+      }
     }
 
-    if (response.status === 204) return null;
-    return response.json();
+    throw new JellyfinApiError(formatJellyfinConnectionError(baseUrl, lastNetworkError));
   } catch (error) {
     if (error?.name === 'AbortError') {
       throw new JellyfinApiError('Jellyfin request timed out.');
@@ -365,6 +395,30 @@ function jellyfinHeaders(apiKey) {
     Authorization: `MediaBrowser Client="${JELLYFIN_CLIENT_NAME}", Device="${JELLYFIN_DEVICE_NAME}", DeviceId="${JELLYFIN_DEVICE_ID}", Version="${JELLYFIN_CLIENT_VERSION}", Token="${token}"`,
     'X-Emby-Token': token,
   };
+}
+
+function createLocalhostIpv4FallbackUrl(url) {
+  if (String(url.hostname || '').toLowerCase() !== 'localhost') return null;
+  const fallbackUrl = new URL(url.toString());
+  fallbackUrl.hostname = '127.0.0.1';
+  return fallbackUrl;
+}
+
+function formatJellyfinConnectionError(baseUrl, error) {
+  const reason = String(error?.message || error || 'fetch failed');
+  const loopbackNote = isLoopbackBaseUrl(baseUrl)
+    ? ' JELLYFIN_BASE_URL is a loopback host; it only reaches Jellyfin when the dashboard server runs on the same machine. On Railway, set it to a public, tunnel, VPN, or Railway-private URL reachable from the Railway service.'
+    : ' Confirm JELLYFIN_BASE_URL is reachable from the dashboard server.';
+  return `Jellyfin request failed: ${reason}.${loopbackNote}`;
+}
+
+function isLoopbackBaseUrl(baseUrl) {
+  try {
+    const hostname = new URL(baseUrl).hostname.toLowerCase();
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
+  } catch {
+    return false;
+  }
 }
 
 function normalizeMovieItem(config, value = {}) {

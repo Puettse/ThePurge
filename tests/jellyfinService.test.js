@@ -116,6 +116,62 @@ test('Jellyfin catalogue fetches movies and merges bot access flags', async () =
   assert.equal(requests[0].params[0], 'guild-1');
 });
 
+test('Jellyfin catalogue retries localhost on IPv4 loopback', async () => {
+  const context = {
+    config: {
+      jellyfinBaseUrl: 'http://localhost:8096/',
+      jellyfinApiKey: 'secret-token',
+    },
+    db: {
+      query: async () => ({ rows: [] }),
+    },
+  };
+  const fetchRequests = [];
+  const fetch = async (url) => {
+    fetchRequests.push(String(url));
+    if (new URL(url).hostname === 'localhost') {
+      throw new TypeError('fetch failed');
+    }
+    return jsonResponse({
+      TotalRecordCount: 1,
+      Items: [movieItem({ Id: 'movie-1', Name: 'Alpha', ProductionYear: 2001 })],
+    });
+  };
+
+  const catalog = await getJellyfinCatalogForGuild(context, 'guild-1', { fetch, forceRefresh: true });
+
+  assert.equal(catalog.ok, true);
+  assert.equal(catalog.total, 1);
+  assert.equal(new URL(fetchRequests[0]).hostname, 'localhost');
+  assert.equal(new URL(fetchRequests[1]).hostname, '127.0.0.1');
+});
+
+test('Jellyfin catalogue returns structured errors when the server is unreachable', async () => {
+  const context = {
+    config: {
+      jellyfinBaseUrl: 'http://localhost:8096/',
+      jellyfinApiKey: 'secret-token',
+    },
+    db: {
+      query: async () => {
+        throw new Error('database should not be called');
+      },
+    },
+  };
+  const fetch = async () => {
+    throw new TypeError('fetch failed');
+  };
+
+  const catalog = await getJellyfinCatalogForGuild(context, 'guild-1', { fetch, forceRefresh: true });
+
+  assert.equal(catalog.ok, false);
+  assert.equal(catalog.configured, true);
+  assert.equal(catalog.total, 0);
+  assert.deepEqual(catalog.items, []);
+  assert.match(catalog.error, /loopback host/);
+  assert.match(catalog.error, /Railway/);
+});
+
 test('Jellyfin catalogue facets support genre, year, and actor browsing', () => {
   const items = [
     { name: 'Alpha', sortName: 'Alpha', genres: ['Action'], productionYear: 2001, actors: ['Alex Actor'] },

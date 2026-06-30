@@ -98,7 +98,15 @@ async function handleModeSelection(context, interaction, mode, page) {
   }
 
   const catalog = await getEnabledJellyfinCatalog(context, interaction.guild.id);
-  if (!catalog.ok || catalog.items.length === 0) {
+  if (!catalog.ok) {
+    await replyOrUpdate(interaction, {
+      embeds: [baseEmbed('Jellyfin Catalog').setDescription(catalog.error || 'Jellyfin catalogue is unavailable right now.')],
+      components: [modeButtons()],
+    });
+    return;
+  }
+
+  if (catalog.items.length === 0) {
     await replyOrUpdate(interaction, {
       embeds: [baseEmbed('Jellyfin Catalog').setDescription('No Jellyfin titles are enabled for bot access yet.')],
       components: [modeButtons()],

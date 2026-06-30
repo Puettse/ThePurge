@@ -1,6 +1,6 @@
 {
   "name": "thepurge",
-  "version": "4.3.5",
+  "version": "4.3.6",
   "description": "All-in-one Discord moderation, automation, ticketing, and dashboard bot",
   "main": "index.js",
   "type": "module",
@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "node --test",
-    "check": "node --check index.js && node --test"
+    "check": "node --check index.js && node --test",
+    "archive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/archive-source-of-truth.ps1"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

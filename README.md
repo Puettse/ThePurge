@@ -59,7 +59,7 @@ Copy `.env.example` and set equivalent Railway variables:
 | `DATABASE_URL` | Yes | PostgreSQL connection string. |
 | `PUBLIC_BASE_URL` | Dashboard | Public Railway URL, used for OAuth callback. Defaults to `https://thepurge-production.up.railway.app` when not set. |
 | `SESSION_SECRET` | Dashboard | Long random string for dashboard cookies. |
-| `JELLYFIN_BASE_URL` | Jellyfin | Public or Railway-reachable Jellyfin server URL. |
+| `JELLYFIN_BASE_URL` | Jellyfin | Public or Railway-reachable Jellyfin server URL. Do not use `localhost` on Railway unless Jellyfin runs in the same service container. |
 | `JELLYFIN_API_KEY` | Jellyfin | Jellyfin API key used only by the server-side dashboard proxy. |
 | `PORT` | Railway | HTTP port, defaults to `3000`. |
 | `NODE_ENV` | Recommended | Use `production` on Railway. |
