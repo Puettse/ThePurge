@@ -8,6 +8,7 @@ test('all planned public commands are registered', () => {
   assert.deepEqual(names, [
     'automod',
     'autorole',
+    'catalog',
     'custom-command',
     'dashboard',
     'economy',

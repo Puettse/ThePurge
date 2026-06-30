@@ -3,6 +3,18 @@ import { resolveButtonHandler, resolveCommandHandler } from './handlers/index.js
 
 export async function handleInteraction(context, interaction) {
   try {
+    if ((interaction.isButton() || interaction.isStringSelectMenu()) && interaction.customId.startsWith('catalog:')) {
+      if (!interaction.guild) {
+        await interaction.reply({ content: 'Catalog browsing must be used in a server.', ephemeral: true });
+        return;
+      }
+
+      await ensureGuild(context.db, interaction.guild);
+      const handler = await resolveButtonHandler('catalog');
+      await handler(context, interaction);
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith('ticket:')) {
       const handler = await resolveButtonHandler('ticket');
       await handler(context, interaction);

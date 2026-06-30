@@ -1,9 +1,22 @@
 export const JELLYFIN_CLIENT_NAME = 'ThePurge';
 export const JELLYFIN_DEVICE_NAME = 'Railway Dashboard';
 export const JELLYFIN_DEVICE_ID = 'thepurge-dashboard';
-export const JELLYFIN_CLIENT_VERSION = '4.3.3';
+export const JELLYFIN_CLIENT_VERSION = '4.3.4';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+const CATALOG_PAGE_SIZE = 200;
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
+const MOVIE_FIELDS = [
+  'Genres',
+  'Overview',
+  'People',
+  'PrimaryImageAspectRatio',
+  'ProductionLocations',
+  'ProviderIds',
+  'Studios',
+];
+
+const catalogCache = new Map();
 
 export function getJellyfinConfigStatus(config) {
   const baseUrl = normalizeJellyfinBaseUrl(config?.jellyfinBaseUrl || '');
@@ -52,6 +65,134 @@ export async function getJellyfinSnapshot(config, options = {}) {
   };
 }
 
+export async function getJellyfinCatalogForGuild(context, guildId, options = {}) {
+  const status = getJellyfinConfigStatus(context.config);
+  if (!status.configured) {
+    return {
+      ok: false,
+      ...status,
+      items: [],
+      total: 0,
+      enabledCount: 0,
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  const items = await getJellyfinMovieCatalog(context.config, options);
+  const mergedItems = await mergeCatalogAccess(context.db, guildId, items);
+
+  return {
+    ok: true,
+    ...status,
+    total: mergedItems.length,
+    enabledCount: mergedItems.filter((item) => item.enabled).length,
+    checkedAt: new Date().toISOString(),
+    items: mergedItems,
+  };
+}
+
+export async function setJellyfinCatalogAccess(context, guildId, actorId, itemId, enabled) {
+  const movie = await getJellyfinMovieById(context.config, itemId);
+  await context.db.query(
+    `
+    INSERT INTO jellyfin_catalog_access (
+      guild_id, item_id, title, production_year, genres, people, enabled, updated_by, updated_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+    ON CONFLICT (guild_id, item_id) DO UPDATE SET
+      title = EXCLUDED.title,
+      production_year = EXCLUDED.production_year,
+      genres = EXCLUDED.genres,
+      people = EXCLUDED.people,
+      enabled = EXCLUDED.enabled,
+      updated_by = EXCLUDED.updated_by,
+      updated_at = NOW()
+    RETURNING *;
+    `,
+    [
+      guildId,
+      movie.id,
+      movie.name,
+      movie.productionYear,
+      JSON.stringify(movie.genres),
+      JSON.stringify(movie.people),
+      Boolean(enabled),
+      actorId,
+    ],
+  );
+
+  await recordJellyfinAudit(context, {
+    guildId,
+    actorId,
+    targetId: movie.id,
+    action: 'jellyfin.catalog_access_updated',
+    details: {
+      itemId: movie.id,
+      title: movie.name,
+      enabled: Boolean(enabled),
+    },
+  });
+
+  return {
+    ok: true,
+    item: {
+      ...movie,
+      enabled: Boolean(enabled),
+      playUrl: createJellyfinPlayUrl(context.config, movie.id),
+    },
+  };
+}
+
+export async function getEnabledJellyfinCatalog(context, guildId, options = {}) {
+  const catalog = await getJellyfinCatalogForGuild(context, guildId, options);
+  return {
+    ...catalog,
+    items: catalog.items.filter((item) => item.enabled),
+    enabledCount: catalog.enabledCount,
+  };
+}
+
+export function buildCatalogFacets(items, mode) {
+  const counts = new Map();
+
+  for (const item of items) {
+    for (const value of getFacetValues(item, mode)) {
+      const key = String(value || '').trim();
+      if (!key) continue;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  }
+
+  const facets = Array.from(counts.entries()).map(([value, count]) => ({
+    value,
+    label: value,
+    count,
+  }));
+
+  if (mode === 'year') {
+    facets.sort((left, right) => Number(right.value) - Number(left.value));
+  } else {
+    facets.sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
+  }
+
+  return facets;
+}
+
+export function filterCatalogItems(items, mode, value) {
+  const expected = String(value || '').trim().toLowerCase();
+  if (!expected) return [];
+
+  return items
+    .filter((item) => getFacetValues(item, mode).some((facet) => String(facet).trim().toLowerCase() === expected))
+    .sort(sortMoviesByTitle);
+}
+
+export function createJellyfinPlayUrl(config, itemId) {
+  const baseUrl = normalizeJellyfinBaseUrl(config?.jellyfinBaseUrl || '');
+  if (!baseUrl || !itemId) return '';
+  return `${baseUrl}/web/#/details?id=${encodeURIComponent(itemId)}`;
+}
+
 export function normalizeJellyfinBaseUrl(value) {
   const raw = String(value || '').trim().replace(/\/+$/, '');
   if (!raw) return '';
@@ -63,6 +204,82 @@ export function normalizeJellyfinBaseUrl(value) {
   } catch {
     return '';
   }
+}
+
+async function getJellyfinMovieCatalog(config, options = {}) {
+  const status = getJellyfinConfigStatus(config);
+  if (!status.configured) {
+    throw new JellyfinApiError(`Jellyfin is not configured. Missing ${status.missingConfig.join(', ')}.`);
+  }
+
+  const cacheKey = status.baseUrl;
+  const cached = catalogCache.get(cacheKey);
+  if (!options.forceRefresh && cached && cached.expiresAt > Date.now()) {
+    return cached.items;
+  }
+
+  const items = [];
+  let startIndex = 0;
+  let total = null;
+
+  do {
+    const result = await jellyfinRequest(config, '/Items', {
+      recursive: true,
+      includeItemTypes: ['Movie'],
+      fields: MOVIE_FIELDS,
+      sortBy: ['SortName'],
+      sortOrder: ['Ascending'],
+      startIndex,
+      limit: CATALOG_PAGE_SIZE,
+    }, options);
+
+    const pageItems = (result?.Items || []).map((item) => normalizeMovieItem(config, item));
+    items.push(...pageItems);
+    total = Number.isFinite(result?.TotalRecordCount) ? result.TotalRecordCount : items.length;
+    startIndex += pageItems.length;
+
+    if (pageItems.length === 0) break;
+  } while (items.length < total);
+
+  catalogCache.set(cacheKey, {
+    items,
+    expiresAt: Date.now() + CATALOG_CACHE_TTL_MS,
+  });
+
+  return items;
+}
+
+async function getJellyfinMovieById(config, itemId, options = {}) {
+  const result = await jellyfinRequest(config, `/Items/${encodeURIComponent(itemId)}`, {
+    fields: MOVIE_FIELDS,
+  }, options);
+  return normalizeMovieItem(config, result);
+}
+
+async function mergeCatalogAccess(db, guildId, items) {
+  if (!items.length) return [];
+
+  const itemIds = items.map((item) => item.id);
+  const result = await db.query(
+    `
+    SELECT item_id, enabled, updated_at, updated_by
+    FROM jellyfin_catalog_access
+    WHERE guild_id = $1
+      AND item_id = ANY($2::text[])
+    `,
+    [guildId, itemIds],
+  );
+  const accessByItemId = new Map(result.rows.map((row) => [row.item_id, row]));
+
+  return items.map((item) => {
+    const access = accessByItemId.get(item.id);
+    return {
+      ...item,
+      enabled: Boolean(access?.enabled),
+      updatedAt: access?.updated_at || null,
+      updatedBy: access?.updated_by || null,
+    };
+  });
 }
 
 async function loadJellyfinSections(config, options) {
@@ -148,6 +365,78 @@ function jellyfinHeaders(apiKey) {
     Authorization: `MediaBrowser Client="${JELLYFIN_CLIENT_NAME}", Device="${JELLYFIN_DEVICE_NAME}", DeviceId="${JELLYFIN_DEVICE_ID}", Version="${JELLYFIN_CLIENT_VERSION}", Token="${token}"`,
     'X-Emby-Token': token,
   };
+}
+
+function normalizeMovieItem(config, value = {}) {
+  const people = normalizePeople(value.People || []);
+  return {
+    id: value.Id,
+    serverId: value.ServerId || null,
+    name: value.Name || value.OriginalTitle || 'Untitled',
+    originalTitle: value.OriginalTitle || null,
+    sortName: value.SortName || value.Name || '',
+    type: value.Type || 'Movie',
+    overview: value.Overview || '',
+    productionYear: Number.isFinite(value.ProductionYear) ? value.ProductionYear : null,
+    premiereDate: value.PremiereDate || null,
+    officialRating: value.OfficialRating || null,
+    communityRating: Number.isFinite(value.CommunityRating) ? value.CommunityRating : null,
+    runtimeTicks: Number.isFinite(value.RunTimeTicks) ? value.RunTimeTicks : null,
+    runtimeMinutes: Number.isFinite(value.RunTimeTicks) ? Math.round(value.RunTimeTicks / 600_000_000) : null,
+    genres: Array.isArray(value.Genres) ? value.Genres.filter(Boolean).map(String) : [],
+    people,
+    actors: people.filter((person) => person.type.toLowerCase() === 'actor').map((person) => person.name),
+    studios: normalizeNamedValues(value.Studios || []),
+    productionLocations: Array.isArray(value.ProductionLocations) ? value.ProductionLocations.filter(Boolean).map(String) : [],
+    providerIds: value.ProviderIds || {},
+    hasPrimaryImage: Boolean(value.ImageTags?.Primary),
+    playUrl: createJellyfinPlayUrl(config, value.Id),
+  };
+}
+
+function normalizePeople(people) {
+  return people
+    .filter((person) => person?.Name)
+    .map((person) => ({
+      id: person.Id || null,
+      name: person.Name,
+      type: person.Type || 'Person',
+      role: person.Role || null,
+    }));
+}
+
+function normalizeNamedValues(values) {
+  return values
+    .map((value) => (typeof value === 'string' ? value : value?.Name))
+    .filter(Boolean)
+    .map(String);
+}
+
+function getFacetValues(item, mode) {
+  if (mode === 'genre') return item.genres || [];
+  if (mode === 'year') return item.productionYear ? [String(item.productionYear)] : [];
+  if (mode === 'actor') return item.actors || [];
+  return [];
+}
+
+function sortMoviesByTitle(left, right) {
+  return (left.sortName || left.name).localeCompare(right.sortName || right.name, undefined, { sensitivity: 'base' });
+}
+
+async function recordJellyfinAudit(context, event) {
+  if (context.audit) {
+    await context.audit.record({
+      ...event,
+      source: 'dashboard',
+    });
+    return;
+  }
+
+  context.liveFeed.publish(`audit.${event.action}`, {
+    ...event,
+    source: 'dashboard',
+    severity: 'info',
+  });
 }
 
 function normalizeSystemInfo(value = {}) {

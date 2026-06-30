@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildCatalogFacets,
+  filterCatalogItems,
   getJellyfinConfigStatus,
+  getJellyfinCatalogForGuild,
   getJellyfinSnapshot,
   normalizeJellyfinBaseUrl,
 } from '../src/services/jellyfinService.js';
@@ -68,6 +71,69 @@ test('Jellyfin snapshot calls stable API endpoints with server-side auth headers
   assert.ok(requests.every((request) => request.headers.Authorization.includes('Token="secret-token"')));
   assert.ok(requests.every((request) => request.headers['X-Emby-Token'] === 'secret-token'));
 });
+
+test('Jellyfin catalogue fetches movies and merges bot access flags', async () => {
+  const requests = [];
+  const context = {
+    config: {
+      jellyfinBaseUrl: 'https://catalog.example.com/',
+      jellyfinApiKey: 'secret-token',
+    },
+    db: {
+      query: async (sql, params) => {
+        requests.push({ sql, params });
+        return {
+          rows: [{ item_id: 'movie-2', enabled: true, updated_at: new Date('2026-01-01T00:00:00Z'), updated_by: 'admin' }],
+        };
+      },
+    },
+  };
+  const fetchRequests = [];
+  const fetch = async (url) => {
+    fetchRequests.push(String(url));
+    const parsed = new URL(url);
+    const startIndex = Number(parsed.searchParams.get('startIndex') || 0);
+    if (startIndex === 0) {
+      return jsonResponse({
+        TotalRecordCount: 2,
+        Items: [
+          movieItem({ Id: 'movie-1', Name: 'Alpha', ProductionYear: 2001, Genres: ['Action'], People: [{ Name: 'Alex Actor', Type: 'Actor' }] }),
+          movieItem({ Id: 'movie-2', Name: 'Beta', ProductionYear: 2002, Genres: ['Drama'], People: [{ Name: 'Bailey Star', Type: 'Actor' }] }),
+        ],
+      });
+    }
+    return jsonResponse({ TotalRecordCount: 2, Items: [] });
+  };
+
+  const catalog = await getJellyfinCatalogForGuild(context, 'guild-1', { fetch, forceRefresh: true });
+
+  assert.equal(catalog.total, 2);
+  assert.equal(catalog.enabledCount, 1);
+  assert.equal(catalog.items[0].enabled, false);
+  assert.equal(catalog.items[1].enabled, true);
+  assert.equal(catalog.items[1].playUrl, 'https://catalog.example.com/web/#/details?id=movie-2');
+  assert.equal(fetchRequests[0].includes('/Items?'), true);
+  assert.equal(requests[0].params[0], 'guild-1');
+});
+
+test('Jellyfin catalogue facets support genre, year, and actor browsing', () => {
+  const items = [
+    { name: 'Alpha', sortName: 'Alpha', genres: ['Action'], productionYear: 2001, actors: ['Alex Actor'] },
+    { name: 'Beta', sortName: 'Beta', genres: ['Action', 'Drama'], productionYear: 2002, actors: ['Alex Actor', 'Bailey Star'] },
+  ];
+
+  assert.deepEqual(buildCatalogFacets(items, 'genre').map((facet) => [facet.value, facet.count]), [['Action', 2], ['Drama', 1]]);
+  assert.deepEqual(buildCatalogFacets(items, 'year').map((facet) => facet.value), ['2002', '2001']);
+  assert.deepEqual(filterCatalogItems(items, 'actor', 'Alex Actor').map((item) => item.name), ['Alpha', 'Beta']);
+});
+
+function movieItem(overrides = {}) {
+  return {
+    Type: 'Movie',
+    RunTimeTicks: 7_200_000_0000,
+    ...overrides,
+  };
+}
 
 function jsonResponse(body, status = 200) {
   return {

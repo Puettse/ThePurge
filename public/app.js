@@ -2,6 +2,7 @@ let selectedGuildId = null;
 
 const TARGET_AUDIO_SAMPLE_RATE = 48000;
 const MAX_AUDIO_SOCKET_BUFFERED_BYTES = 512 * 1024;
+const JELLYFIN_CATALOG_PAGE_SIZE = 50;
 
 const state = {
   health: null,
@@ -12,6 +13,8 @@ const state = {
   remoteVoice: { connected: false, channelId: null, status: 'disconnected' },
   remoteError: null,
   jellyfin: null,
+  jellyfinCatalog: { items: [], total: 0, enabledCount: 0, configured: false },
+  jellyfinCatalogPage: 0,
 };
 
 const voiceCapture = {
@@ -62,6 +65,13 @@ const elements = {
   jellyfinSessions: document.querySelector('#jellyfinSessions'),
   jellyfinActivity: document.querySelector('#jellyfinActivity'),
   jellyfinErrors: document.querySelector('#jellyfinErrors'),
+  jellyfinCatalogRefreshButton: document.querySelector('#jellyfinCatalogRefreshButton'),
+  jellyfinCatalogSearch: document.querySelector('#jellyfinCatalogSearch'),
+  jellyfinCatalogAvailableOnly: document.querySelector('#jellyfinCatalogAvailableOnly'),
+  jellyfinCatalogStatus: document.querySelector('#jellyfinCatalogStatus'),
+  jellyfinCatalogList: document.querySelector('#jellyfinCatalogList'),
+  jellyfinCatalogPrevButton: document.querySelector('#jellyfinCatalogPrevButton'),
+  jellyfinCatalogNextButton: document.querySelector('#jellyfinCatalogNextButton'),
   logoutButton: document.querySelector('#logoutButton'),
 };
 
@@ -72,6 +82,7 @@ async function boot() {
   startFeed();
   renderRemoteOps();
   renderJellyfin();
+  renderJellyfinCatalog();
 
   if (state.me?.user) {
     await refreshGuilds();
@@ -120,6 +131,7 @@ async function refreshOverview() {
   await Promise.all([
     refreshRemoteOps(),
     refreshJellyfin(),
+    refreshJellyfinCatalog(),
   ]);
   renderOverview();
 }
@@ -144,6 +156,7 @@ function renderOverview() {
   renderModules();
   renderRemoteOps();
   renderJellyfin();
+  renderJellyfinCatalog();
   renderSettings();
   renderCommands();
   renderJobs();
@@ -215,6 +228,28 @@ async function refreshJellyfin() {
     state.jellyfin = await api(`/api/guilds/${selectedGuildId}/jellyfin/status`);
   } catch (error) {
     state.jellyfin = { ok: false, configured: false, error: error.message, missingConfig: [] };
+  }
+}
+
+async function refreshJellyfinCatalog(options = {}) {
+  if (!selectedGuildId) {
+    state.jellyfinCatalog = { items: [], total: 0, enabledCount: 0, configured: false };
+    return;
+  }
+
+  try {
+    const refresh = options.forceRefresh ? '?refresh=true' : '';
+    state.jellyfinCatalog = await api(`/api/guilds/${selectedGuildId}/jellyfin/catalog${refresh}`);
+  } catch (error) {
+    state.jellyfinCatalog = {
+      ok: false,
+      configured: false,
+      items: [],
+      total: 0,
+      enabledCount: 0,
+      error: error.message,
+      missingConfig: [],
+    };
   }
 }
 
@@ -300,6 +335,60 @@ function renderJellyfin() {
   elements.jellyfinErrors.textContent = Object.entries(sectionErrors)
     .map(([section, message]) => `${section}: ${message}`)
     .join(' | ');
+}
+
+function renderJellyfinCatalog() {
+  elements.jellyfinCatalogList.innerHTML = '';
+  elements.jellyfinCatalogRefreshButton.disabled = !selectedGuildId;
+  elements.jellyfinCatalogSearch.disabled = !selectedGuildId;
+  elements.jellyfinCatalogAvailableOnly.disabled = !selectedGuildId;
+
+  if (!selectedGuildId) {
+    elements.jellyfinCatalogStatus.textContent = 'Select a server to load the catalogue.';
+    elements.jellyfinCatalogPrevButton.disabled = true;
+    elements.jellyfinCatalogNextButton.disabled = true;
+    return;
+  }
+
+  const catalog = state.jellyfinCatalog || {};
+  if (catalog.error) {
+    elements.jellyfinCatalogStatus.textContent = catalog.error;
+    elements.jellyfinCatalogPrevButton.disabled = true;
+    elements.jellyfinCatalogNextButton.disabled = true;
+    return;
+  }
+
+  if (!catalog.configured) {
+    const missing = catalog.missingConfig?.length ? ` Missing ${catalog.missingConfig.join(', ')}.` : '';
+    elements.jellyfinCatalogStatus.textContent = `Catalogue not configured.${missing}`;
+    elements.jellyfinCatalogPrevButton.disabled = true;
+    elements.jellyfinCatalogNextButton.disabled = true;
+    return;
+  }
+
+  const filtered = getFilteredJellyfinCatalogItems();
+  const pageCount = Math.max(1, Math.ceil(filtered.length / JELLYFIN_CATALOG_PAGE_SIZE));
+  state.jellyfinCatalogPage = Math.min(Math.max(0, state.jellyfinCatalogPage), pageCount - 1);
+  const pageItems = filtered.slice(
+    state.jellyfinCatalogPage * JELLYFIN_CATALOG_PAGE_SIZE,
+    state.jellyfinCatalogPage * JELLYFIN_CATALOG_PAGE_SIZE + JELLYFIN_CATALOG_PAGE_SIZE,
+  );
+
+  elements.jellyfinCatalogStatus.textContent = `${catalog.total || 0} titles synced. ${catalog.enabledCount || 0} enabled for bot access. Showing ${filtered.length} filtered title${filtered.length === 1 ? '' : 's'}.`;
+  elements.jellyfinCatalogPrevButton.disabled = state.jellyfinCatalogPage <= 0;
+  elements.jellyfinCatalogNextButton.disabled = state.jellyfinCatalogPage >= pageCount - 1;
+
+  if (!pageItems.length) {
+    const empty = document.createElement('div');
+    empty.className = 'item';
+    empty.textContent = 'No catalogue titles match the current filter.';
+    elements.jellyfinCatalogList.append(empty);
+    return;
+  }
+
+  for (const item of pageItems) {
+    elements.jellyfinCatalogList.append(createCatalogRow(item));
+  }
 }
 
 function renderSettings() {
@@ -458,8 +547,34 @@ function bindForms() {
   };
   elements.jellyfinRefreshButton.onclick = async () => {
     elements.jellyfinStatus.textContent = 'Refreshing Jellyfin...';
-    await refreshJellyfin();
+    await Promise.all([
+      refreshJellyfin(),
+      refreshJellyfinCatalog({ forceRefresh: true }),
+    ]);
     renderJellyfin();
+    renderJellyfinCatalog();
+  };
+  elements.jellyfinCatalogRefreshButton.onclick = async () => {
+    elements.jellyfinCatalogStatus.textContent = 'Syncing Jellyfin catalogue...';
+    state.jellyfinCatalogPage = 0;
+    await refreshJellyfinCatalog({ forceRefresh: true });
+    renderJellyfinCatalog();
+  };
+  elements.jellyfinCatalogSearch.oninput = () => {
+    state.jellyfinCatalogPage = 0;
+    renderJellyfinCatalog();
+  };
+  elements.jellyfinCatalogAvailableOnly.onchange = () => {
+    state.jellyfinCatalogPage = 0;
+    renderJellyfinCatalog();
+  };
+  elements.jellyfinCatalogPrevButton.onclick = () => {
+    state.jellyfinCatalogPage = Math.max(0, state.jellyfinCatalogPage - 1);
+    renderJellyfinCatalog();
+  };
+  elements.jellyfinCatalogNextButton.onclick = () => {
+    state.jellyfinCatalogPage += 1;
+    renderJellyfinCatalog();
   };
 
   elements.settingsForm.onsubmit = async (event) => {
@@ -1004,6 +1119,76 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleString();
+}
+
+function getFilteredJellyfinCatalogItems() {
+  const catalog = state.jellyfinCatalog || {};
+  const search = elements.jellyfinCatalogSearch.value.trim().toLowerCase();
+  const availableOnly = elements.jellyfinCatalogAvailableOnly.checked;
+
+  return (catalog.items || []).filter((item) => {
+    if (availableOnly && !item.enabled) return false;
+    if (!search) return true;
+
+    return [
+      item.name,
+      item.productionYear,
+      ...(item.genres || []),
+      ...(item.actors || []),
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(search));
+  });
+}
+
+function createCatalogRow(item) {
+  const row = document.createElement('div');
+  row.className = 'item catalog-row';
+
+  const titleWrap = document.createElement('div');
+  titleWrap.className = 'catalog-title';
+  const title = document.createElement('strong');
+  title.textContent = item.productionYear ? `${item.name} (${item.productionYear})` : item.name;
+  const detail = document.createElement('small');
+  detail.textContent = [
+    (item.genres || []).slice(0, 3).join(', '),
+    (item.actors || []).slice(0, 3).join(', '),
+    item.runtimeMinutes ? `${item.runtimeMinutes} min` : '',
+  ].filter(Boolean).join(' | ') || 'No metadata returned.';
+  titleWrap.append(title, detail);
+
+  const switchLabel = document.createElement('label');
+  switchLabel.className = 'switch';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = Boolean(item.enabled);
+  input.setAttribute('aria-label', `Allow bot access to ${item.name}`);
+  const slider = document.createElement('span');
+  slider.className = 'slider';
+  input.onchange = async () => {
+    const nextValue = input.checked;
+    input.disabled = true;
+    elements.jellyfinCatalogStatus.textContent = `${nextValue ? 'Enabling' : 'Disabling'} ${item.name}...`;
+
+    try {
+      const result = await api(`/api/guilds/${selectedGuildId}/jellyfin/catalog/${encodeURIComponent(item.id)}/access`, {
+        method: 'PUT',
+        body: { enabled: nextValue },
+      });
+      const current = (state.jellyfinCatalog.items || []).find((catalogItem) => catalogItem.id === item.id);
+      if (current) current.enabled = result.item.enabled;
+      state.jellyfinCatalog.enabledCount = (state.jellyfinCatalog.items || []).filter((catalogItem) => catalogItem.enabled).length;
+      renderJellyfinCatalog();
+    } catch (error) {
+      input.checked = !nextValue;
+      elements.jellyfinCatalogStatus.textContent = error.message;
+      input.disabled = false;
+    }
+  };
+  switchLabel.append(input, slider);
+
+  row.append(titleWrap, switchLabel);
+  return row;
 }
 
 function requireGuildSelection() {

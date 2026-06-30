@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.3.3",
-  "codename": "Jellyfin API Access",
+  "version": "4.3.4",
+  "codename": "Jellyfin Bot Catalogue",
   "release_date": "2026-06-30",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -21,10 +21,11 @@
     "Shared media purge service with permission checks, pagination, and honest delete counts",
     "Dashboard starts in degraded mode when bot, database, or required config is unavailable",
     "Remote Ops can transmit dashboard microphone audio and browser-captured screen/app audio into Discord voice",
-    "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility"
+    "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility",
+    "Jellyfin movie catalogue access controls and Discord browse flow by genre, year, or actor"
   ],
   "next": [
-    "Add Jellyfin playback/search actions once the target workflow is defined",
+    "Add richer Jellyfin playback actions once direct-play handling is defined",
     "Add browser-playable inbound Discord voice monitoring through a receiver/decoder layer",
     "Add dashboard form support for reaction-role message binding",
     "Expand ticket transcripts beyond the most recent 100 messages",

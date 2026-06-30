@@ -1,6 +1,7 @@
 const commandLoaders = {
   setup: () => import('./setup.js').then((module) => module.handleSetup),
   dashboard: () => import('./setup.js').then((module) => module.handleDashboard),
+  catalog: () => import('./catalog.js').then((module) => module.handleCatalog),
   purge: () => import('./moderation.js').then((module) => module.handlePurge),
   mod: () => import('./moderation.js').then((module) => module.handleMod),
   automod: () => import('./automation.js').then((module) => module.handleAutomod),
@@ -16,6 +17,7 @@ const commandLoaders = {
 
 const buttonLoaders = {
   ticket: () => import('./tickets.js').then((module) => module.handleTicketButton),
+  catalog: () => import('./catalog.js').then((module) => module.handleCatalogComponent),
 };
 
 export async function resolveCommandHandler(commandName) {

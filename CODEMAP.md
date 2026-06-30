@@ -11,6 +11,7 @@ Last updated: 2026-06-30
 
 - `src/config.js` reads Railway/Discord/PostgreSQL/Jellyfin environment variables.
 - `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
+- `jellyfin_catalog_access` stores per-guild Jellyfin item access toggles for bot catalogue exposure.
 - `railway.json` pins Railway build/deploy config, health check, and restart policy.
 
 ## Discord Bot
@@ -20,7 +21,7 @@ Last updated: 2026-06-30
 - `src/bot/registerCommands.js` registers global application commands.
 - `src/bot/events.js` wires guild, message, member, reaction, and interaction handlers.
 - `src/bot/interactions.js` routes interactions through lazy-loaded feature handlers.
-- `src/bot/handlers/` contains independently loaded command modules for setup, moderation, automation, logs, engagement, and tickets.
+- `src/bot/handlers/` contains independently loaded command modules for setup, moderation, automation, logs, engagement, tickets, and Jellyfin catalog browsing.
 
 ## Services
 
@@ -35,7 +36,7 @@ Last updated: 2026-06-30
 - `src/services/schedulerTasks.js` contains scheduler task helpers.
 - `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
 - `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, and dashboard audio transmission.
-- `src/services/jellyfinService.js` calls Jellyfin system, library, sessions, and activity endpoints through server-side token auth.
+- `src/services/jellyfinService.js` calls Jellyfin system, library, sessions, activity, and movie catalogue endpoints through server-side token auth.
 
 ## Dashboard
 

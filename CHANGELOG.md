@@ -2,6 +2,15 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.4] - 2026-06-30
+
+### Added
+
+- Added a Jellyfin bot catalogue table with per-guild, per-title bot access toggles.
+- Added dashboard catalogue sync, title search, bot-access filter, pagination, and slide toggles.
+- Added `/catalog` with Discord embeds, genre/year/actor browse modes, paged option navigation, movie selection, and private Jellyfin title links.
+- Added catalogue tests for movie fetch, access merge, facets, and command registration.
+
 ## [4.3.3] - 2026-06-30
 
 ### Added

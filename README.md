@@ -17,6 +17,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
 - Jellyfin dashboard access: server-side API calls expose system status, libraries, active sessions, and recent activity without sending the API key to the browser.
+- Jellyfin bot catalogue: dashboard title sync, per-title bot access toggles, and `/catalog` browsing by genre, year, or actor with Jellyfin title links.
 
 ## Module Isolation Rule
 
@@ -32,6 +33,7 @@ No feature should be so tightly coupled to another feature that one outage takes
 
 - `/setup`
 - `/dashboard`
+- `/catalog`
 - `/purge`
 - `/mod`
 - `/automod`
