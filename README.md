@@ -92,6 +92,26 @@ npm.cmd install
 npm.cmd test
 ```
 
+## Jellyfin Tunnel
+
+For a temporary proof tunnel from this Windows machine to local Jellyfin:
+
+```powershell
+npm.cmd run tunnel:jellyfin:quick
+```
+
+For the permanent EBMSOL tunnel route, authenticate Cloudflare for `ebmsol.com`, then run:
+
+```powershell
+npm.cmd run tunnel:jellyfin:setup -- -Login -CreateScheduledTask -StartNow
+```
+
+The stable Railway value should be:
+
+```text
+JELLYFIN_BASE_URL=https://jellyfin.ebmsol.com
+```
+
 ## Current Limits
 
 - Full dashboard runtime requires Discord OAuth variables and a live bot token.

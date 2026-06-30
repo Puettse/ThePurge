@@ -11,7 +11,9 @@
     "start": "node index.js",
     "test": "node --test",
     "check": "node --check index.js && node --test",
-    "archive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/archive-source-of-truth.ps1"
+    "archive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/archive-source-of-truth.ps1",
+    "tunnel:jellyfin:quick": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-jellyfin-quick-tunnel.ps1",
+    "tunnel:jellyfin:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-jellyfin-cloudflare-tunnel.ps1"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
