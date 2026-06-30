@@ -24,8 +24,13 @@ function Get-ArchiveRelativePath([string]$Root, [string]$Path) {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+
+function Invoke-GitText([string[]]$Arguments) {
+  return ((& git -C $repoRoot @Arguments | Out-String).Trim())
+}
+
 if (-not $Branch) {
-  $Branch = (& git -C $repoRoot branch --show-current).Trim()
+  $Branch = Invoke-GitText @('branch', '--show-current')
 }
 if (-not $Branch) {
   throw 'Could not resolve the current Git branch.'
@@ -39,14 +44,14 @@ $bundlesDir = Join-Path $ArchiveRoot 'bundles'
 $metadataDir = Join-Path $ArchiveRoot 'metadata'
 New-Item -ItemType Directory -Force -Path $versionsDir, $bundlesDir, $metadataDir | Out-Null
 
-$dirty = (& git -C $repoRoot status --porcelain).Trim()
+$dirty = Invoke-GitText @('status', '--porcelain')
 if ($dirty) {
   Write-Warning 'Working tree has uncommitted changes; archive output records committed Git history only.'
 }
 
-$remote = (& git -C $repoRoot config --get remote.origin.url).Trim()
-$head = (& git -C $repoRoot rev-parse $Branch).Trim()
-$headShort = (& git -C $repoRoot rev-parse --short $head).Trim()
+$remote = Invoke-GitText @('config', '--get', 'remote.origin.url')
+$head = Invoke-GitText @('rev-parse', $Branch)
+$headShort = Invoke-GitText @('rev-parse', '--short', $head)
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $generatedAt = (Get-Date).ToString('o')
 
@@ -66,7 +71,7 @@ foreach ($line in $commitLines) {
   $commit = $parts[0]
   $commitDate = $parts[1]
   $subject = $parts[2]
-  $short = (& git -C $repoRoot rev-parse --short $commit).Trim()
+  $short = Invoke-GitText @('rev-parse', '--short', $commit)
   $slug = ConvertTo-Slug $subject
   $zipPath = Join-Path $versionsDir ("{0:D4}-{1}-{2}.zip" -f $ordinal, $short, $slug)
 
