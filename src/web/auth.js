@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { getDiscordRedirectUri } from '../config.js';
 
 const sessions = new Map();
+export const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 export function createAuth(config) {
   const cookieName = 'thepurge_session';
@@ -21,10 +22,7 @@ export function createAuth(config) {
   }
 
   function sign(value) {
-    return crypto
-      .createHmac('sha256', config.sessionSecret)
-      .update(value)
-      .digest('base64url');
+    return signValue(config.sessionSecret, value);
   }
 
   function setCookie(res, sessionId) {
@@ -65,13 +63,7 @@ export function createAuth(config) {
       return;
     }
 
-    const state = crypto.randomBytes(24).toString('hex');
-    res.cookie('thepurge_oauth_state', `${state}.${sign(state)}`, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: config.nodeEnv === 'production',
-      maxAge: 1000 * 60 * 10,
-    });
+    const state = createOAuthState(config.sessionSecret);
 
     const url = new URL('https://discord.com/api/oauth2/authorize');
     url.searchParams.set('client_id', config.clientId);
@@ -84,11 +76,8 @@ export function createAuth(config) {
 
   async function callback(req, res) {
     const { code, state } = req.query;
-    const rawState = req.cookies?.thepurge_oauth_state;
-    const expected = rawState?.split('.')[0];
-    const signature = rawState?.split('.')[1];
 
-    if (!code || !state || state !== expected || signature !== sign(expected)) {
+    if (!code || !verifyOAuthState(config.sessionSecret, String(state || ''))) {
       res.status(400).send('Invalid OAuth state.');
       return;
     }
@@ -154,6 +143,48 @@ export function createAuth(config) {
   }
 
   return { isConfigured, missingConfig, login, callback, logout, requireAuth, readCookie };
+}
+
+export function createOAuthState(sessionSecret, now = Date.now()) {
+  const payload = Buffer
+    .from(JSON.stringify({
+      nonce: crypto.randomBytes(24).toString('hex'),
+      issuedAt: now,
+    }), 'utf8')
+    .toString('base64url');
+
+  return `${payload}.${signValue(sessionSecret, payload)}`;
+}
+
+export function verifyOAuthState(sessionSecret, state, now = Date.now()) {
+  if (typeof state !== 'string' || !state.includes('.')) return false;
+  const [payload, signature] = state.split('.');
+  if (!payload || !signature || !timingSafeEqual(signature, signValue(sessionSecret, payload))) {
+    return false;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const issuedAt = Number(decoded.issuedAt || 0);
+    if (!Number.isFinite(issuedAt) || issuedAt <= 0) return false;
+    if (issuedAt > now + 60_000) return false;
+    return now - issuedAt <= OAUTH_STATE_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function signValue(secret, value) {
+  return crypto
+    .createHmac('sha256', secret)
+    .update(value)
+    .digest('base64url');
+}
+
+function timingSafeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left));
+  const rightBuffer = Buffer.from(String(right));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 export function canManageGuild(guild) {
