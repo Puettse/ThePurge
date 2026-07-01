@@ -1,8 +1,8 @@
 {
   "name": "ThePurge",
-  "version": "4.3.7",
-  "codename": "Catalogue Manager Separation",
-  "release_date": "2026-06-30",
+  "version": "4.3.8",
+  "codename": "ngrok Domain Guard",
+  "release_date": "2026-07-01",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
   "license": "MIT",
@@ -24,6 +24,7 @@
     "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser playback",
     "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
     "Dedicated catalogue manager page separates Jellyfin title visibility from Remote Ops bot control",
+    "Jellyfin sync supports ngrok-free endpoints while Discord playback links stay disabled until EBMSOL Domain Guard is live",
     "Jellyfin dashboard retries localhost on IPv4 for local Windows servers and reports Railway reachability issues clearly",
     "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility",
     "Jellyfin movie catalogue access controls and Discord browse flow by genre, year, or actor"

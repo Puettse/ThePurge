@@ -2,6 +2,15 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.8] - 2026-07-01
+
+### Changed
+
+- Replaced Cloudflare Jellyfin tunnel scripts and documentation with ngrok-based Domain Guard setup.
+- Split Jellyfin sync URL from public playback URL with `JELLYFIN_PUBLIC_BASE_URL`.
+- Disabled Discord Jellyfin playback links by default through `JELLYFIN_ENABLE_PLAY_LINKS=false`.
+- Added server-side `ngrok-skip-browser-warning` support for `ngrok-free.dev` Jellyfin sync endpoints.
+
 ## [4.3.7] - 2026-06-30
 
 ### Changed

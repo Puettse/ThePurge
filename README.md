@@ -19,7 +19,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
 - Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice playback, protected voice activity records, and protected 30-second WAV clips.
 - Jellyfin dashboard access: server-side API calls expose system status, libraries, active sessions, and recent activity without sending the API key to the browser.
-- Jellyfin bot catalogue: `/catalogue` title sync, per-title bot access toggles, and `/catalog` browsing by genre, year, or actor with Jellyfin title links.
+- Jellyfin bot catalogue: `/catalogue` title sync, per-title bot access toggles, `/catalog` browsing by genre, year, or actor, and playback links gated behind the EBMSOL Domain Guard.
 
 ## Module Isolation Rule
 
@@ -60,7 +60,9 @@ Copy `.env.example` and set equivalent Railway variables:
 | `DATABASE_URL` | Yes | PostgreSQL connection string. |
 | `PUBLIC_BASE_URL` | Dashboard | Public Railway URL, used for OAuth callback. Defaults to `https://thepurge-production.up.railway.app` when not set. |
 | `SESSION_SECRET` | Dashboard | Long random string for dashboard cookies. |
-| `JELLYFIN_BASE_URL` | Jellyfin | Public or Railway-reachable Jellyfin server URL. Do not use `localhost` on Railway unless Jellyfin runs in the same service container. |
+| `JELLYFIN_BASE_URL` | Jellyfin | Server-side Jellyfin API/sync URL reachable from Railway. Use the ngrok proof endpoint until the EBMSOL domain is live. |
+| `JELLYFIN_PUBLIC_BASE_URL` | Jellyfin | Public playback base URL for Discord links. Current target: `https://entertainment.ebmsol.com`. |
+| `JELLYFIN_ENABLE_PLAY_LINKS` | Jellyfin | Set `true` only after `JELLYFIN_PUBLIC_BASE_URL` works. Defaults to `false`. |
 | `JELLYFIN_API_KEY` | Jellyfin | Jellyfin API key used only by the server-side dashboard proxy. |
 | `PORT` | Railway | HTTP port, defaults to `3000`. |
 | `NODE_ENV` | Recommended | Use `production` on Railway. |
@@ -93,24 +95,34 @@ npm.cmd install
 npm.cmd test
 ```
 
-## Jellyfin Tunnel
+## Jellyfin ngrok Domain Guard
 
-For a temporary proof tunnel from this Windows machine to local Jellyfin:
+For the current ngrok proof endpoint from this Windows machine to local Jellyfin:
 
 ```powershell
 npm.cmd run tunnel:jellyfin:quick
 ```
 
-For the permanent EBMSOL tunnel route, authenticate Cloudflare for `ebmsol.com`, then run:
+For the permanent EBMSOL Domain Guard route, add `entertainment.ebmsol.com` as an ngrok custom domain, point EBMSOL DNS/domain forwarding at ngrok, then run:
 
 ```powershell
-npm.cmd run tunnel:jellyfin:setup -- -Login -CreateScheduledTask -StartNow
+npm.cmd run tunnel:jellyfin:setup -- -CreateWindowsService -StartNow
 ```
 
-The stable Railway value should be:
+Immediate Railway values while the ngrok proof endpoint is active:
 
 ```text
-JELLYFIN_BASE_URL=https://jellyfin.ebmsol.com
+JELLYFIN_BASE_URL=https://goatskin-diffuser-fled.ngrok-free.dev
+JELLYFIN_PUBLIC_BASE_URL=https://entertainment.ebmsol.com
+JELLYFIN_ENABLE_PLAY_LINKS=false
+```
+
+Final Railway values after `https://entertainment.ebmsol.com/System/Info/Public` returns Jellyfin public info:
+
+```text
+JELLYFIN_BASE_URL=https://entertainment.ebmsol.com
+JELLYFIN_PUBLIC_BASE_URL=https://entertainment.ebmsol.com
+JELLYFIN_ENABLE_PLAY_LINKS=true
 ```
 
 ## Current Limits

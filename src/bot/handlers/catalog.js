@@ -175,8 +175,15 @@ async function handleMovieSelection(context, interaction, token, itemId) {
     return;
   }
 
+  await interaction.reply(createMovieSelectionResponse(movie));
+}
+
+export function createMovieSelectionResponse(movie) {
+  const fallbackDescription = movie.playUrl
+    ? 'Open this title in Jellyfin.'
+    : 'This title is enabled in the server catalogue. Jellyfin playback links are disabled until the EBMSOL domain guard is live.';
   const embed = baseEmbed(movie.name)
-    .setDescription(movie.overview ? truncate(movie.overview, 800) : 'Open this title in Jellyfin.')
+    .setDescription(movie.overview ? truncate(movie.overview, 800) : fallbackDescription)
     .addFields(
       { name: 'Year', value: movie.productionYear ? String(movie.productionYear) : 'Unknown', inline: true },
       { name: 'Runtime', value: movie.runtimeMinutes ? `${movie.runtimeMinutes} min` : 'Unknown', inline: true },
@@ -192,11 +199,11 @@ async function handleMovieSelection(context, interaction, token, itemId) {
     ),
   ] : [];
 
-  await interaction.reply({
+  return {
     embeds: [embed],
     components,
     ephemeral: true,
-  });
+  };
 }
 
 function createModeResponse() {

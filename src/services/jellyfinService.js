@@ -1,7 +1,7 @@
 export const JELLYFIN_CLIENT_NAME = 'ThePurge';
 export const JELLYFIN_DEVICE_NAME = 'Railway Dashboard';
 export const JELLYFIN_DEVICE_ID = 'thepurge-dashboard';
-export const JELLYFIN_CLIENT_VERSION = '4.3.7';
+export const JELLYFIN_CLIENT_VERSION = '4.3.8';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const CATALOG_PAGE_SIZE = 200;
@@ -202,7 +202,8 @@ export function filterCatalogItems(items, mode, value) {
 }
 
 export function createJellyfinPlayUrl(config, itemId) {
-  const baseUrl = normalizeJellyfinBaseUrl(config?.jellyfinBaseUrl || '');
+  if (!config?.jellyfinEnablePlayLinks) return '';
+  const baseUrl = normalizeJellyfinBaseUrl(config?.jellyfinPublicBaseUrl || '');
   if (!baseUrl || !itemId) return '';
   return `${baseUrl}/web/#/details?id=${encodeURIComponent(itemId)}`;
 }
@@ -226,7 +227,11 @@ async function getJellyfinMovieCatalog(config, options = {}) {
     throw new JellyfinApiError(`Jellyfin is not configured. Missing ${status.missingConfig.join(', ')}.`);
   }
 
-  const cacheKey = status.baseUrl;
+  const cacheKey = [
+    status.baseUrl,
+    normalizeJellyfinBaseUrl(config?.jellyfinPublicBaseUrl || ''),
+    config?.jellyfinEnablePlayLinks ? 'links-on' : 'links-off',
+  ].join('|');
   const cached = catalogCache.get(cacheKey);
   if (!options.forceRefresh && cached && cached.expiresAt > Date.now()) {
     return cached.items;
@@ -359,7 +364,7 @@ async function jellyfinRequest(config, path, query = {}, options = {}) {
     for (const requestUrl of urls) {
       try {
         const response = await fetchImpl(requestUrl, {
-          headers: jellyfinHeaders(config.jellyfinApiKey),
+          headers: jellyfinHeaders(config.jellyfinApiKey, requestUrl),
           signal: controller.signal,
         });
 
@@ -388,13 +393,27 @@ async function jellyfinRequest(config, path, query = {}, options = {}) {
   }
 }
 
-function jellyfinHeaders(apiKey) {
+function jellyfinHeaders(apiKey, requestUrl) {
   const token = String(apiKey || '').trim();
-  return {
+  const headers = {
     Accept: 'application/json',
     Authorization: `MediaBrowser Client="${JELLYFIN_CLIENT_NAME}", Device="${JELLYFIN_DEVICE_NAME}", DeviceId="${JELLYFIN_DEVICE_ID}", Version="${JELLYFIN_CLIENT_VERSION}", Token="${token}"`,
     'X-Emby-Token': token,
   };
+
+  if (isNgrokFreeUrl(requestUrl)) {
+    headers['ngrok-skip-browser-warning'] = 'true';
+  }
+
+  return headers;
+}
+
+function isNgrokFreeUrl(value) {
+  try {
+    return new URL(value).hostname.toLowerCase().endsWith('.ngrok-free.dev');
+  } catch {
+    return false;
+  }
 }
 
 function createLocalhostIpv4FallbackUrl(url) {

@@ -31,6 +31,8 @@ export function createHealthSnapshot(context, auth) {
       jellyfin: {
         configured: jellyfinMissing.length === 0,
         baseUrl: context.config?.jellyfinBaseUrl || null,
+        publicBaseUrl: context.config?.jellyfinPublicBaseUrl || null,
+        playLinksEnabled: Boolean(context.config?.jellyfinEnablePlayLinks),
         missingConfig: jellyfinMissing,
       },
     },

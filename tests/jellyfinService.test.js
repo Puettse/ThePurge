@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildCatalogFacets,
+  createJellyfinPlayUrl,
   filterCatalogItems,
   getJellyfinConfigStatus,
   getJellyfinCatalogForGuild,
@@ -70,6 +71,45 @@ test('Jellyfin snapshot calls stable API endpoints with server-side auth headers
   assert.equal(requests.length, 5);
   assert.ok(requests.every((request) => request.headers.Authorization.includes('Token="secret-token"')));
   assert.ok(requests.every((request) => request.headers['X-Emby-Token'] === 'secret-token'));
+  assert.ok(requests.every((request) => !request.headers['ngrok-skip-browser-warning']));
+});
+
+test('Jellyfin snapshot skips ngrok free-domain browser warning for server-side sync', async () => {
+  const requests = [];
+  const fetch = async (url, options) => {
+    requests.push({ url: String(url), headers: options.headers });
+
+    if (String(url).includes('/System/Info/Public')) {
+      return jsonResponse({ ServerName: 'Media', Version: '10.10.7' });
+    }
+
+    if (String(url).includes('/System/Info')) {
+      return jsonResponse({ Id: 'server-id', ServerName: 'Media', Version: '10.10.7' });
+    }
+
+    if (String(url).includes('/Library/MediaFolders')) {
+      return jsonResponse({ Items: [] });
+    }
+
+    if (String(url).includes('/Sessions')) {
+      return jsonResponse([]);
+    }
+
+    if (String(url).includes('/System/ActivityLog/Entries')) {
+      return jsonResponse({ Items: [] });
+    }
+
+    throw new Error(`Unexpected URL ${url}`);
+  };
+
+  const snapshot = await getJellyfinSnapshot({
+    jellyfinBaseUrl: 'https://goatskin-diffuser-fled.ngrok-free.dev/',
+    jellyfinApiKey: 'secret-token',
+  }, { fetch });
+
+  assert.equal(snapshot.ok, true);
+  assert.equal(requests.length, 5);
+  assert.ok(requests.every((request) => request.headers['ngrok-skip-browser-warning'] === 'true'));
 });
 
 test('Jellyfin catalogue fetches movies and merges bot access flags', async () => {
@@ -77,6 +117,8 @@ test('Jellyfin catalogue fetches movies and merges bot access flags', async () =
   const context = {
     config: {
       jellyfinBaseUrl: 'https://catalog.example.com/',
+      jellyfinPublicBaseUrl: 'https://entertainment.ebmsol.com/',
+      jellyfinEnablePlayLinks: true,
       jellyfinApiKey: 'secret-token',
     },
     db: {
@@ -111,9 +153,32 @@ test('Jellyfin catalogue fetches movies and merges bot access flags', async () =
   assert.equal(catalog.enabledCount, 1);
   assert.equal(catalog.items[0].enabled, false);
   assert.equal(catalog.items[1].enabled, true);
-  assert.equal(catalog.items[1].playUrl, 'https://catalog.example.com/web/#/details?id=movie-2');
+  assert.equal(catalog.items[1].playUrl, 'https://entertainment.ebmsol.com/web/#/details?id=movie-2');
   assert.equal(fetchRequests[0].includes('/Items?'), true);
   assert.equal(requests[0].params[0], 'guild-1');
+});
+
+test('Jellyfin play links are disabled until the EBMSOL domain guard is live', () => {
+  assert.equal(createJellyfinPlayUrl({
+    jellyfinBaseUrl: 'https://goatskin-diffuser-fled.ngrok-free.dev/',
+    jellyfinPublicBaseUrl: 'https://entertainment.ebmsol.com/',
+    jellyfinEnablePlayLinks: false,
+  }, 'movie-1'), '');
+});
+
+test('Jellyfin play links use the public EBMSOL domain when enabled', () => {
+  assert.equal(createJellyfinPlayUrl({
+    jellyfinBaseUrl: 'https://goatskin-diffuser-fled.ngrok-free.dev/',
+    jellyfinPublicBaseUrl: 'https://entertainment.ebmsol.com/',
+    jellyfinEnablePlayLinks: true,
+  }, 'movie-1'), 'https://entertainment.ebmsol.com/web/#/details?id=movie-1');
+});
+
+test('Jellyfin play links require a public playback URL', () => {
+  assert.equal(createJellyfinPlayUrl({
+    jellyfinBaseUrl: 'https://goatskin-diffuser-fled.ngrok-free.dev/',
+    jellyfinEnablePlayLinks: true,
+  }, 'movie-1'), '');
 });
 
 test('Jellyfin catalogue retries localhost on IPv4 loopback', async () => {
