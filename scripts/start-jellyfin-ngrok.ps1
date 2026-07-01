@@ -51,7 +51,7 @@ Remove-Item -LiteralPath $outLog, $errLog -Force -ErrorAction SilentlyContinue
 
 $process = Start-Process `
   -FilePath $ngrok `
-  -ArgumentList @('http', $ServiceUrl, "--url=$endpointHost") `
+  -ArgumentList @('http', "--url=$endpointHost", $ServiceUrl) `
   -WindowStyle Hidden `
   -PassThru `
   -RedirectStandardOutput $outLog `
