@@ -31,7 +31,6 @@ export function createGuildRouter(context) {
   router.use('/:guildId', lazyRouter('tickets', () => import('./modules/tickets.js').then((module) => module.createTicketsRouter(context))));
   router.use('/:guildId', lazyRouter('moderation', () => import('./modules/moderation.js').then((module) => module.createModerationRouter(context))));
   router.use('/:guildId', lazyRouter('remoteOps', () => import('./modules/remoteOps.js').then((module) => module.createRemoteOpsRouter(context))));
-  router.use('/:guildId', lazyRouter('jellyfin', () => import('./modules/jellyfin.js').then((module) => module.createJellyfinRouter(context))));
 
   return router;
 }

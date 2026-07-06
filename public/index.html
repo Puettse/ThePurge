@@ -13,7 +13,6 @@
         <p id="status">Loading status...</p>
       </div>
       <div class="actions">
-        <a class="button secondary" href="/catalogue">Catalogue Manager</a>
         <a class="button" href="/auth/login" id="loginButton">Discord Login</a>
         <button id="logoutButton" type="button">Logout</button>
       </div>
@@ -78,33 +77,6 @@
               </div>
             </form>
           </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Jellyfin</h2>
-            <div class="actions">
-              <a class="button secondary" href="/catalogue">Manage Catalogue</a>
-              <button id="jellyfinRefreshButton" class="secondary" type="button">Refresh</button>
-            </div>
-          </div>
-          <p id="jellyfinStatus" class="status-note"></p>
-          <div id="jellyfinSummary" class="metric-grid"></div>
-          <div class="grid integration-grid">
-            <div>
-              <h3>Libraries</h3>
-              <div id="jellyfinLibraries" class="list compact-list"></div>
-            </div>
-            <div>
-              <h3>Active Sessions</h3>
-              <div id="jellyfinSessions" class="list compact-list"></div>
-            </div>
-          </div>
-          <div>
-            <h3>Recent Activity</h3>
-            <div id="jellyfinActivity" class="list compact-list"></div>
-          </div>
-          <p id="jellyfinErrors" class="status-note muted"></p>
         </section>
 
         <section class="panel grid">

@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.3.8",
-  "codename": "ngrok Domain Guard",
+  "version": "4.3.9",
+  "codename": "Control Panel Cleanup",
   "release_date": "2026-07-01",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -23,14 +23,9 @@
     "Remote Ops uses hold-to-talk microphone audio and browser-captured screen/app audio into Discord voice",
     "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser playback",
     "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
-    "Dedicated catalogue manager page separates Jellyfin title visibility from Remote Ops bot control",
-    "Jellyfin sync supports ngrok-free endpoints while Discord playback links stay disabled until EBMSOL Domain Guard is live",
-    "Jellyfin dashboard retries localhost on IPv4 for local Windows servers and reports Railway reachability issues clearly",
-    "Server-side Jellyfin API access for dashboard system, library, session, and activity visibility",
-    "Jellyfin movie catalogue access controls and Discord browse flow by genre, year, or actor"
+    "The dashboard focuses on Discord bot control, Remote Ops, settings, automation, tickets, and live feed"
   ],
   "next": [
-    "Add richer Jellyfin playback actions once direct-play handling is defined",
     "Add speech-to-text provider integration for protected voice clip transcription",
     "Add dashboard form support for reaction-role message binding",
     "Expand ticket transcripts beyond the most recent 100 messages",

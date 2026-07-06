@@ -11,9 +11,6 @@ export const commandData = [
     .setName('dashboard')
     .setDescription('Get the dashboard link and current bot health.'),
   new SlashCommandBuilder()
-    .setName('catalog')
-    .setDescription('Browse Jellyfin titles enabled for bot access.'),
-  new SlashCommandBuilder()
     .setName('purge')
     .setDescription('Delete recent media messages from a channel.')
     .addChannelOption((option) => option

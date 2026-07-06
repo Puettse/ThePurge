@@ -1,6 +1,6 @@
 # Code Map
 
-Last updated: 2026-06-30
+Last updated: 2026-07-05
 
 ## Runtime Entry
 
@@ -9,9 +9,8 @@ Last updated: 2026-06-30
 
 ## Configuration and Data
 
-- `src/config.js` reads Railway/Discord/PostgreSQL/Jellyfin environment variables.
+- `src/config.js` reads Railway, Discord, and PostgreSQL environment variables.
 - `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
-- `jellyfin_catalog_access` stores per-guild Jellyfin item access toggles for bot catalogue exposure.
 - `remote_voice_events` and `remote_voice_clips` store protected dashboard-only voice activity records and WAV clips.
 - `railway.json` pins Railway build/deploy config, health check, and restart policy.
 
@@ -22,7 +21,7 @@ Last updated: 2026-06-30
 - `src/bot/registerCommands.js` registers global application commands.
 - `src/bot/events.js` wires guild, message, member, reaction, and interaction handlers.
 - `src/bot/interactions.js` routes interactions through lazy-loaded feature handlers.
-- `src/bot/handlers/` contains independently loaded command modules for setup, moderation, automation, logs, engagement, tickets, and Jellyfin catalog browsing.
+- `src/bot/handlers/` contains independently loaded command modules for setup, moderation, automation, logs, engagement, and tickets.
 
 ## Services
 
@@ -37,7 +36,6 @@ Last updated: 2026-06-30
 - `src/services/schedulerTasks.js` contains scheduler task helpers.
 - `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
 - `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, dashboard audio transmission, inbound voice receiving, and protected voice records/clips.
-- `src/services/jellyfinService.js` calls Jellyfin system, library, sessions, activity, and movie catalogue endpoints through server-side token auth.
 
 ## Dashboard
 
@@ -46,7 +44,7 @@ Last updated: 2026-06-30
 - `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades for outbound dashboard audio and inbound Discord voice playback.
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
 - `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
-- `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, tickets, remote ops, and Jellyfin.
+- `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, tickets, and remote ops.
 - `public/index.html`, `public/styles.css`, and `public/app.js` implement the browser control panel.
 
 ## Scripts and Tests
@@ -60,6 +58,5 @@ Last updated: 2026-06-30
 - The local folder is a Git checkout on branch `main`.
 - Runtime requires `BOT_TOKEN`, `CLIENT_ID`, and `DATABASE_URL`.
 - Dashboard OAuth requires `CLIENT_SECRET`, `PUBLIC_BASE_URL`, and `SESSION_SECRET`.
-- Jellyfin dashboard access requires `JELLYFIN_BASE_URL` and `JELLYFIN_API_KEY`; the API key stays server-side.
 - Full validation requires successful npm dependency installation.
 - Feature modules should not import other feature modules directly; use shared services for cross-cutting behavior.

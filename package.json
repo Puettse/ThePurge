@@ -1,6 +1,6 @@
 {
   "name": "thepurge",
-  "version": "4.3.8",
+  "version": "4.3.9",
   "description": "All-in-one Discord moderation, automation, ticketing, and dashboard bot",
   "main": "index.js",
   "type": "module",
@@ -11,9 +11,7 @@
     "start": "node index.js",
     "test": "node --test",
     "check": "node --check index.js && node --test",
-    "archive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/archive-source-of-truth.ps1",
-    "tunnel:jellyfin:quick": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-jellyfin-ngrok.ps1",
-    "tunnel:jellyfin:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-jellyfin-ngrok-tunnel.ps1"
+    "archive": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/archive-source-of-truth.ps1"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

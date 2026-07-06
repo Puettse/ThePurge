@@ -23,10 +23,6 @@ export function createDashboardServer(context) {
   app.use(cookieParser());
   app.use(express.static(publicDir));
 
-  app.get('/catalogue', (req, res) => {
-    res.sendFile(path.join(publicDir, 'catalogue.html'));
-  });
-
   app.get('/health', (req, res) => {
     res.json(createHealthSnapshot(context, auth));
   });

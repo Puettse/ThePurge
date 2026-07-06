@@ -2,31 +2,11 @@
 
 All notable changes to ThePurge are documented here.
 
-## [4.3.8] - 2026-07-01
+## [4.3.9] - 2026-07-05
 
 ### Changed
 
-- Replaced Cloudflare Jellyfin tunnel scripts and documentation with ngrok-based Domain Guard setup.
-- Split Jellyfin sync URL from public playback URL with `JELLYFIN_PUBLIC_BASE_URL`.
-- Disabled Discord Jellyfin playback links by default through `JELLYFIN_ENABLE_PLAY_LINKS=false`.
-- Added server-side `ngrok-skip-browser-warning` support for `ngrok-free.dev` Jellyfin sync endpoints.
-
-## [4.3.7] - 2026-06-30
-
-### Changed
-
-- Moved Jellyfin catalogue sync, search, pagination, and per-title Discord visibility toggles into a dedicated `/catalogue` management page.
-- Kept the main dashboard focused on bot control and Jellyfin connection status, with links to open the catalogue manager.
-- Added a clean `/catalogue` route so EBMSOL can embed the catalogue manager separately from Remote Ops.
-
-## [4.3.6] - 2026-06-30
-
-### Fixed
-
-- Added an IPv4 loopback retry for local Jellyfin servers configured as `http://localhost:8096`.
-- Changed Jellyfin catalogue failures to return structured dashboard errors instead of generic dashboard request failures.
-- Added clearer Railway guidance when `JELLYFIN_BASE_URL` points at a loopback host.
-- Deduplicated repeated Jellyfin section errors in the dashboard.
+- Removed the media-server integration from the dashboard, bot commands, route modules, configuration, tests, scripts, and docs.
 
 ## [4.3.5] - 2026-06-30
 
@@ -47,28 +27,6 @@ All notable changes to ThePurge are documented here.
 
 - Discord bot accounts still do not receive other users' camera/screen video streams through the official bot voice API, so video clip capture from Discord cams is not implemented.
 - Voice clip transcription records are stored with `not_configured` status until a speech-to-text provider is wired in.
-
-## [4.3.4] - 2026-06-30
-
-### Added
-
-- Added a Jellyfin bot catalogue table with per-guild, per-title bot access toggles.
-- Added dashboard catalogue sync, title search, bot-access filter, pagination, and slide toggles.
-- Added `/catalog` with Discord embeds, genre/year/actor browse modes, paged option navigation, movie selection, and private Jellyfin title links.
-- Added catalogue tests for movie fetch, access merge, facets, and command registration.
-
-## [4.3.3] - 2026-06-30
-
-### Added
-
-- Added server-side Jellyfin API access using `JELLYFIN_BASE_URL` and `JELLYFIN_API_KEY`.
-- Added a protected dashboard Jellyfin panel for server status, libraries, active sessions, and recent activity.
-- Added `/api/guilds/:guildId/jellyfin/status` behind Discord dashboard authentication and Manage Server access.
-- Added tests for Jellyfin config handling, URL normalization, endpoint calls, and auth headers.
-
-### Changed
-
-- Extended health output with Jellyfin integration configuration status.
 
 ## [4.3.2] - 2026-06-30
 

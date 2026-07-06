@@ -27,6 +27,5 @@ test('dashboard health reports degraded startup when required config is missing'
   assert.equal(health.bot.ready, false);
   assert.equal(health.database.connected, false);
   assert.deepEqual(health.dashboard.missingConfig, ['CLIENT_SECRET']);
-  assert.equal(health.integrations.jellyfin.configured, false);
-  assert.deepEqual(health.integrations.jellyfin.missingConfig, ['JELLYFIN_BASE_URL', 'JELLYFIN_API_KEY']);
+  assert.deepEqual(health.integrations, {});
 });

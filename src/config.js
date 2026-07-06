@@ -18,10 +18,6 @@ export function loadConfig(env = process.env, options = {}) {
     clientSecret: env.CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || env.BOT_TOKEN || 'local-dashboard-session-secret',
     publicBaseUrl: resolvePublicBaseUrl(env, options),
-    jellyfinBaseUrl: normalizeBaseUrl(env.JELLYFIN_BASE_URL || ''),
-    jellyfinPublicBaseUrl: normalizeBaseUrl(env.JELLYFIN_PUBLIC_BASE_URL || ''),
-    jellyfinApiKey: env.JELLYFIN_API_KEY || '',
-    jellyfinEnablePlayLinks: parseBoolean(env.JELLYFIN_ENABLE_PLAY_LINKS, false),
     port: Number.parseInt(env.PORT || '3000', 10),
     nodeEnv: env.NODE_ENV || 'development',
     missingRequired: missing,
@@ -35,11 +31,6 @@ export function getDiscordRedirectUri(config) {
 
 function normalizeBaseUrl(value) {
   return String(value || '').replace(/\/+$/, '');
-}
-
-function parseBoolean(value, fallback = false) {
-  if (value === undefined || value === null || value === '') return fallback;
-  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 }
 
 function resolvePublicBaseUrl(env, options) {

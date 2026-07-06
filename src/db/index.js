@@ -241,19 +241,6 @@ export async function migrate(db) {
       PRIMARY KEY (guild_id, user_id)
     );
 
-    CREATE TABLE IF NOT EXISTS jellyfin_catalog_access (
-      guild_id TEXT NOT NULL,
-      item_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      production_year INTEGER,
-      genres JSONB DEFAULT '[]'::jsonb,
-      people JSONB DEFAULT '[]'::jsonb,
-      enabled BOOLEAN DEFAULT FALSE,
-      updated_by TEXT,
-      updated_at TIMESTAMPTZ DEFAULT NOW(),
-      PRIMARY KEY (guild_id, item_id)
-    );
-
     CREATE TABLE IF NOT EXISTS remote_voice_events (
       id BIGSERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -346,7 +333,6 @@ export const defaultModules = [
   'tickets',
   'levels',
   'economy',
-  'jellyfinCatalog',
 ];
 
 export async function isModuleEnabled(db, guildId, moduleName) {
