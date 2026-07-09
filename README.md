@@ -16,7 +16,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Ticketing control inspired by ticket panel workflows: panel creation, private ticket channels, staff roles, claim, close, and stored transcripts.
 - Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
-- Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice playback, protected voice activity records, and protected 30-second WAV clips.
+- Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice monitoring, protected voice activity records, and protected 30-second WAV clips.
 
 ## Module Isolation Rule
 
@@ -93,5 +93,4 @@ npm.cmd test
 - Full test suite requires dependencies to install successfully.
 - Sharding, premium/billing, and music are intentionally out of v1 scope.
 - Ticket transcripts store the most recent 100 channel messages at close time.
-- Discord bot accounts cannot capture other users' Discord camera/screen video streams through the official bot voice API. Voice activity and voice audio clips are supported; video recording needs a separate user/client capture path.
 - Voice clip transcription rows are created with `not_configured` status until a speech-to-text provider is added.

@@ -6,7 +6,7 @@ All notable changes to ThePurge are documented here.
 
 ### Changed
 
-- Removed the media-server integration from the dashboard, bot commands, route modules, configuration, tests, scripts, and docs.
+- Removed a retired integration from the dashboard, bot commands, route modules, configuration, tests, scripts, and docs.
 
 ## [4.3.5] - 2026-06-30
 
@@ -25,7 +25,6 @@ All notable changes to ThePurge are documented here.
 
 ### Known Limits
 
-- Discord bot accounts still do not receive other users' camera/screen video streams through the official bot voice API, so video clip capture from Discord cams is not implemented.
 - Voice clip transcription records are stored with `not_configured` status until a speech-to-text provider is wired in.
 
 ## [4.3.2] - 2026-06-30
@@ -43,7 +42,6 @@ All notable changes to ThePurge are documented here.
 ### Known Issues
 
 - Incoming Discord voice monitoring still requires a browser-playable receiver/decoder layer.
-- Discord bot accounts cannot perform true video screen sharing through the official bot voice API; the dashboard can preview captured video locally and transmit captured audio when the browser exposes it.
 
 ## [4.3.1] - 2026-06-28
 

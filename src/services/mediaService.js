@@ -64,7 +64,6 @@ function hasGif(message) {
       embed.url,
       embed.image?.url,
       embed.thumbnail?.url,
-      embed.video?.url,
       embed.provider?.url,
     ])
     .filter(Boolean)

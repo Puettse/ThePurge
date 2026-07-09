@@ -252,20 +252,6 @@ textarea {
   border-top: 1px solid #303640;
 }
 
-.screen-preview {
-  display: none;
-  width: 100%;
-  max-height: 220px;
-  border: 1px solid #343a46;
-  border-radius: 6px;
-  background: #0c0e12;
-  object-fit: contain;
-}
-
-.screen-preview.active {
-  display: block;
-}
-
 .ptt-button.active {
   background: #d83b3b;
   color: #ffffff;

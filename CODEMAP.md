@@ -41,7 +41,7 @@ Last updated: 2026-07-05
 
 - `src/web/server.js` serves static dashboard files and JSON/SSE APIs.
 - `src/web/auth.js` handles Discord OAuth and signed HTTP-only dashboard sessions.
-- `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades for outbound dashboard audio and inbound Discord voice playback.
+- `src/web/remoteVoiceBridge.js` authenticates dashboard voice WebSocket upgrades for outbound dashboard audio and inbound Discord voice monitoring.
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
 - `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
 - `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, tickets, and remote ops.

@@ -21,7 +21,7 @@
     "Shared media purge service with permission checks, pagination, and honest delete counts",
     "Dashboard starts in degraded mode when bot, database, or required config is unavailable",
     "Remote Ops uses hold-to-talk microphone audio and browser-captured screen/app audio into Discord voice",
-    "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser playback",
+    "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser audio",
     "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
     "The dashboard focuses on Discord bot control, Remote Ops, settings, automation, tickets, and live feed"
   ],

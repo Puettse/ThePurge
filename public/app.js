@@ -58,7 +58,6 @@ const elements = {
   remoteScreenSource: document.querySelector('#remoteScreenSource'),
   remoteScreenStartButton: document.querySelector('#remoteScreenStartButton'),
   remoteScreenStopButton: document.querySelector('#remoteScreenStopButton'),
-  remoteScreenPreview: document.querySelector('#remoteScreenPreview'),
   remoteAudioStatus: document.querySelector('#remoteAudioStatus'),
   remoteListenStartButton: document.querySelector('#remoteListenStartButton'),
   remoteListenStopButton: document.querySelector('#remoteListenStopButton'),
@@ -651,7 +650,6 @@ async function startDashboardMic() {
         echoCancellation: true,
         noiseSuppression: true,
       },
-      video: false,
     });
 
     if (!voiceCapture.pushToTalkActive) {
@@ -697,14 +695,11 @@ async function startScreenShare() {
 
     const stream = await navigator.mediaDevices.getDisplayMedia({
       audio: Boolean(elements.remoteScreenAudio.checked),
-      video: true,
     });
 
     stopMediaStream(voiceCapture.screenStream);
     voiceCapture.screenStream = stream;
     voiceCapture.screenLabel = getStreamLabel(stream);
-    elements.remoteScreenPreview.srcObject = stream;
-    elements.remoteScreenPreview.classList.add('active');
     updateScreenSourceSelect();
 
     watchStreamEnd(stream, () => {
@@ -717,7 +712,7 @@ async function startScreenShare() {
       await refreshAudioBridge();
       setRemoteAudioStatus('Screen/app audio is live in Discord voice.');
     } else {
-      setRemoteAudioStatus('Screen/app preview is active. No captured audio track was provided by the browser.');
+      setRemoteAudioStatus('Screen/app selection is active. No captured audio track was provided by the browser.');
     }
   } catch (error) {
     setRemoteAudioStatus(error.message);
@@ -738,10 +733,6 @@ function stopScreenShare() {
   stopMediaStream(voiceCapture.screenStream);
   voiceCapture.screenStream = null;
   voiceCapture.screenLabel = '';
-  elements.remoteScreenPreview.pause();
-  elements.remoteScreenPreview.removeAttribute('src');
-  elements.remoteScreenPreview.srcObject = null;
-  elements.remoteScreenPreview.classList.remove('active');
   updateScreenSourceSelect();
   refreshAudioBridge().catch((error) => setRemoteAudioStatus(error.message));
   updateVoiceCaptureControls();
@@ -754,8 +745,6 @@ function stopAllVoiceCapture() {
   voiceCapture.screenStream = null;
   resetPushToTalkButton();
   voiceCapture.screenLabel = '';
-  elements.remoteScreenPreview.srcObject = null;
-  elements.remoteScreenPreview.classList.remove('active');
   updateScreenSourceSelect();
   stopAudioTransport();
   stopIncomingVoice('dashboard_reset');
@@ -1080,7 +1069,7 @@ function updateScreenSourceSelect() {
 }
 
 function getStreamLabel(stream) {
-  return stream.getVideoTracks()[0]?.label
+  return stream.getTracks().find((track) => track.kind !== 'audio')?.label
     || stream.getAudioTracks()[0]?.label
     || 'Captured screen/app';
 }
