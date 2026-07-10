@@ -265,6 +265,47 @@ export async function migrate(db) {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS server_builder_configs (
+      id BIGSERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+      config_key TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      content TEXT NOT NULL,
+      parsed JSONB NOT NULL,
+      storage_path TEXT,
+      uploaded_by TEXT,
+      validation_summary JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (guild_id, config_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS server_builder_mappings (
+      guild_id TEXT NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+      config_key TEXT NOT NULL,
+      object_type TEXT NOT NULL,
+      object_key TEXT NOT NULL,
+      discord_id TEXT NOT NULL,
+      discord_name TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (guild_id, config_key, object_type, object_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS server_builder_runs (
+      id BIGSERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+      config_key TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      dry_run BOOLEAN NOT NULL DEFAULT TRUE,
+      status TEXT NOT NULL,
+      actor_id TEXT,
+      result JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     INSERT INTO scheduled_jobs (guild_id, channel_id, job_type, payload, interval_seconds, next_run_at)
     SELECT
       purge_configs.guild_id,

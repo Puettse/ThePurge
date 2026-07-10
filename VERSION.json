@@ -1,7 +1,7 @@
 {
   "name": "ThePurge",
-  "version": "4.3.10",
-  "codename": "Invite Controls",
+  "version": "4.4.0",
+  "codename": "Server Builder",
   "release_date": "2026-07-10",
   "description": "All-in-one Discord moderation, automation, ticketing, engagement, and dashboard bot.",
   "author": "Code Copilot",
@@ -24,6 +24,7 @@
     "Remote Ops uses hold-to-talk microphone audio and browser-captured screen/app audio into Discord voice",
     "Remote Ops can listen to inbound Discord voice through a receiver/decoder WebSocket and protected browser audio",
     "Remote Ops stores protected voice activity records and 30-second WAV clips for website-only review",
+    "Dashboard-only Server Builder validates, previews, and applies YAML or JSON Discord server blueprints",
     "The dashboard focuses on Discord bot control, Remote Ops, settings, automation, tickets, and live feed"
   ],
   "next": [

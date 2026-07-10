@@ -18,6 +18,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
 - Invite controls: Manage Server users can create one-use server invites and send them by DM to a Discord user ID or username already visible to the bot.
 - Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice monitoring, protected voice activity records, and protected 30-second WAV clips.
+- Server Builder: dashboard-only YAML/JSON server blueprint upload, validation, preview, and apply workflow for roles, categories, channels, permission overwrites, and supported channel settings.
 
 ## Module Isolation Rule
 
@@ -28,6 +29,31 @@ No feature should be so tightly coupled to another feature that one outage takes
 - Event-driven features such as AutoMod, custom commands, leveling, welcome, autoroles, and reaction roles run independently.
 - Dashboard overview data returns `sectionErrors` when one section fails instead of failing the whole dashboard.
 - Shared services are allowed for cross-cutting concerns such as database access, audit events, permissions, templates, and live feed, but feature code must not import another feature module directly.
+
+## Server Builder
+
+Server Builder is intentionally dashboard-only. There is no slash command, prefix command, or Discord interaction path for applying a server build.
+
+Use the Bot Control Page:
+
+1. Select a guild in the dashboard.
+2. Open the `Server Builder` card.
+3. Enter a config key such as `domus-ursi`.
+4. Upload a `.yaml`, `.yml`, or `.json` config file up to 1 MB.
+5. Click `Validate`.
+6. Click `Preview` for the selected build mode.
+7. Click `Apply` only after preview succeeds.
+
+The canonical template is `docs/server-builder.example.yaml`. It supports `schema_version`, `server`, `danger_zone`, named `colors`, keyed `roles`, keyed `categories`, keyed `channels`, and `post_build`.
+
+Build modes:
+
+- `CREATE`: build into a selected guild only when it is effectively blank.
+- `UPDATE`: create/update mapped objects only and block unmapped exact-name conflicts.
+- `REVAMP`: dashboard-only destructive rebuild, gated by `danger_zone.allow_deletes`.
+- `CLEAN`: dashboard-only cleanup of explicit config cleanup targets, gated by `danger_zone.allow_deletes`.
+
+Server Builder stores configs, mappings, and run history in PostgreSQL. It also mirrors uploaded config files under `server-builder/configs/`, which is ignored by Git.
 
 ## Commands
 
@@ -45,6 +71,8 @@ No feature should be so tightly coupled to another feature that one outage takes
 - `/rank`
 - `/economy`
 - `/ticket`
+
+Server Builder has no Discord command.
 
 ## Railway Variables
 

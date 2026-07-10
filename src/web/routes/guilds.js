@@ -32,6 +32,7 @@ export function createGuildRouter(context) {
   router.use('/:guildId', lazyRouter('moderation', () => import('./modules/moderation.js').then((module) => module.createModerationRouter(context))));
   router.use('/:guildId', lazyRouter('remoteOps', () => import('./modules/remoteOps.js').then((module) => module.createRemoteOpsRouter(context))));
   router.use('/:guildId', lazyRouter('invites', () => import('./modules/invites.js').then((module) => module.createInvitesRouter(context))));
+  router.use('/:guildId', lazyRouter('serverBuilder', () => import('./modules/serverBuilder.js').then((module) => module.createServerBuilderRouter(context))));
 
   return router;
 }

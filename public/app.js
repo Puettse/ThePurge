@@ -13,6 +13,7 @@ const state = {
   remoteVoice: { connected: false, channelId: null, status: 'disconnected' },
   remoteVoiceRecords: { events: [], clips: [] },
   remoteError: null,
+  serverBuilder: { configs: [], runs: [], lastPreview: null },
 };
 
 const voiceCapture = {
@@ -67,6 +68,15 @@ const elements = {
   remoteInboundStatus: document.querySelector('#remoteInboundStatus'),
   remoteVoiceRecordsRefreshButton: document.querySelector('#remoteVoiceRecordsRefreshButton'),
   remoteVoiceRecords: document.querySelector('#remoteVoiceRecords'),
+  serverBuilderForm: document.querySelector('#serverBuilderForm'),
+  serverBuilderFile: document.querySelector('#serverBuilderFile'),
+  serverBuilderRefreshButton: document.querySelector('#serverBuilderRefreshButton'),
+  serverBuilderValidateButton: document.querySelector('#serverBuilderValidateButton'),
+  serverBuilderPreviewButton: document.querySelector('#serverBuilderPreviewButton'),
+  serverBuilderApplyButton: document.querySelector('#serverBuilderApplyButton'),
+  serverBuilderStatus: document.querySelector('#serverBuilderStatus'),
+  serverBuilderConfigs: document.querySelector('#serverBuilderConfigs'),
+  serverBuilderResult: document.querySelector('#serverBuilderResult'),
   logoutButton: document.querySelector('#logoutButton'),
 };
 
@@ -105,7 +115,9 @@ async function refreshGuilds() {
     button.onclick = async () => {
       stopAllVoiceCapture();
       selectedGuildId = guild.id;
+      state.serverBuilder.lastPreview = null;
       setRemoteMessageStatus('');
+      setServerBuilderStatus('');
       await refreshOverview();
       await refreshGuilds();
     };
@@ -124,6 +136,7 @@ async function refreshOverview() {
   await Promise.all([
     refreshRemoteOps(),
     refreshVoiceRecords(),
+    refreshServerBuilder(),
   ]);
   renderOverview();
 }
@@ -151,6 +164,7 @@ function renderOverview() {
   renderCommands();
   renderJobs();
   renderTickets();
+  renderServerBuilder();
 }
 
 function renderModules() {
@@ -229,6 +243,26 @@ async function refreshVoiceRecords() {
   }
 }
 
+async function refreshServerBuilder() {
+  if (!selectedGuildId) {
+    state.serverBuilder = { configs: [], runs: [], lastPreview: null };
+    return;
+  }
+
+  try {
+    const [configs, runs] = await Promise.all([
+      api(`/api/guilds/${selectedGuildId}/server-builder/configs`),
+      api(`/api/guilds/${selectedGuildId}/server-builder/runs`),
+    ]);
+    state.serverBuilder.configs = configs.configs || [];
+    state.serverBuilder.runs = runs.runs || [];
+  } catch (error) {
+    state.serverBuilder.configs = [];
+    state.serverBuilder.runs = [];
+    setServerBuilderStatus(error.message);
+  }
+}
+
 function renderSettings() {
   const settings = state.overview.settings || {};
   elements.settingsForm.prefix.value = settings.prefix || '!';
@@ -296,6 +330,47 @@ function renderTickets() {
     }
 
     elements.tickets.append(row);
+  }
+}
+
+function renderServerBuilder() {
+  if (!elements.serverBuilderConfigs) return;
+  elements.serverBuilderConfigs.innerHTML = '';
+  elements.serverBuilderApplyButton.disabled = !state.serverBuilder.lastPreview?.ok;
+  elements.serverBuilderPreviewButton.disabled = !selectedGuildId;
+  elements.serverBuilderValidateButton.disabled = !selectedGuildId;
+  elements.serverBuilderRefreshButton.disabled = !selectedGuildId;
+
+  const configs = state.serverBuilder.configs || [];
+  if (configs.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'item';
+    empty.textContent = selectedGuildId ? 'No Server Builder configs saved.' : 'Select a server first.';
+    elements.serverBuilderConfigs.append(empty);
+  }
+
+  for (const config of configs.slice(0, 8)) {
+    const row = document.createElement('div');
+    row.className = 'item';
+    const summary = config.validationSummary || {};
+    const title = document.createElement('strong');
+    title.textContent = config.key;
+    const detail = document.createElement('small');
+    detail.textContent = `${config.fileName} | roles ${summary.roles || 0}, categories ${summary.categories || 0}, channels ${summary.channels || 0}`;
+    const use = document.createElement('button');
+    use.type = 'button';
+    use.className = 'secondary';
+    use.textContent = 'Use';
+    use.onclick = () => {
+      elements.serverBuilderForm.configKey.value = config.key;
+      setServerBuilderStatus(`Selected ${config.key}.`);
+    };
+    row.append(title, detail, use);
+    elements.serverBuilderConfigs.append(row);
+  }
+
+  if (!elements.serverBuilderResult.textContent.trim()) {
+    elements.serverBuilderResult.textContent = 'Validate or preview a Server Builder config.';
   }
 }
 
@@ -433,6 +508,25 @@ function bindForms() {
     } catch (error) {
       setInviteMemberStatus(error.message);
     }
+  };
+
+  elements.serverBuilderForm.onsubmit = async (event) => {
+    event.preventDefault();
+    await validateServerBuilderConfig();
+  };
+
+  elements.serverBuilderPreviewButton.onclick = async () => {
+    await previewServerBuilderConfig();
+  };
+
+  elements.serverBuilderApplyButton.onclick = async () => {
+    await applyServerBuilderConfig();
+  };
+
+  elements.serverBuilderRefreshButton.onclick = async () => {
+    await refreshServerBuilder();
+    renderServerBuilder();
+    setServerBuilderStatus('Server Builder configs refreshed.');
   };
 
   elements.remoteVoiceForm.selfMute.onchange = updateRemoteVoiceStateFromForm;
@@ -589,6 +683,149 @@ function readFileAsBase64(file) {
     };
     reader.readAsDataURL(file);
   });
+}
+
+async function validateServerBuilderConfig() {
+  setServerBuilderStatus('Validating...');
+  state.serverBuilder.lastPreview = null;
+  renderServerBuilder();
+
+  try {
+    requireGuildSelection();
+    const configKey = getServerBuilderConfigKey();
+    const file = elements.serverBuilderFile.files?.[0] || null;
+    let result;
+
+    if (file) {
+      const content = await readFileAsText(file);
+      result = await api(`/api/guilds/${selectedGuildId}/server-builder/configs`, {
+        method: 'POST',
+        body: {
+          configKey,
+          file: {
+            fileName: file.name,
+            content,
+          },
+        },
+      });
+    } else {
+      result = await api(`/api/guilds/${selectedGuildId}/server-builder/configs/${encodeURIComponent(configKey)}/validate`, {
+        method: 'POST',
+        body: {},
+      });
+    }
+
+    await refreshServerBuilder();
+    renderServerBuilder();
+    renderServerBuilderResult(result);
+    setServerBuilderStatus(result.message || 'Config validated.');
+  } catch (error) {
+    state.serverBuilder.lastPreview = null;
+    renderServerBuilderError(error);
+  }
+}
+
+async function previewServerBuilderConfig() {
+  setServerBuilderStatus('Building preview...');
+  state.serverBuilder.lastPreview = null;
+  renderServerBuilder();
+
+  try {
+    requireGuildSelection();
+    const configKey = getServerBuilderConfigKey();
+    const mode = elements.serverBuilderForm.mode.value;
+    const result = await api(`/api/guilds/${selectedGuildId}/server-builder/configs/${encodeURIComponent(configKey)}/preview`, {
+      method: 'POST',
+      body: { mode },
+    });
+    state.serverBuilder.lastPreview = {
+      ok: result.ok,
+      configKey,
+      mode,
+    };
+    await refreshServerBuilder();
+    state.serverBuilder.lastPreview = {
+      ok: result.ok,
+      configKey,
+      mode,
+    };
+    renderServerBuilder();
+    renderServerBuilderResult(result);
+    setServerBuilderStatus(result.message || 'Preview ready.');
+  } catch (error) {
+    state.serverBuilder.lastPreview = null;
+    renderServerBuilderError(error);
+  }
+}
+
+async function applyServerBuilderConfig() {
+  setServerBuilderStatus('Applying Server Builder config...');
+
+  try {
+    requireGuildSelection();
+    const configKey = getServerBuilderConfigKey();
+    const mode = elements.serverBuilderForm.mode.value;
+    if (!state.serverBuilder.lastPreview?.ok || state.serverBuilder.lastPreview.configKey !== configKey || state.serverBuilder.lastPreview.mode !== mode) {
+      throw new Error('Run Preview successfully for this config and mode before Apply.');
+    }
+    const result = await api(`/api/guilds/${selectedGuildId}/server-builder/configs/${encodeURIComponent(configKey)}/apply`, {
+      method: 'POST',
+      body: { mode },
+    });
+    state.serverBuilder.lastPreview = null;
+    await refreshServerBuilder();
+    renderServerBuilder();
+    renderServerBuilderResult(result);
+    setServerBuilderStatus(result.message || 'Apply complete.');
+  } catch (error) {
+    renderServerBuilderError(error);
+  }
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.readAsText(file);
+  });
+}
+
+function getServerBuilderConfigKey() {
+  const key = elements.serverBuilderForm.configKey.value.trim();
+  if (!key) throw new Error('Enter a Server Builder config key.');
+  return key;
+}
+
+function renderServerBuilderResult(result) {
+  const output = {
+    ok: result.ok,
+    message: result.message,
+    config: result.config ? {
+      key: result.config.key,
+      fileName: result.config.fileName,
+      updatedAt: result.config.updatedAt,
+    } : undefined,
+    validation: result.validation?.summary ? result.validation : undefined,
+    summary: result.summary,
+    errors: result.errors || [],
+    warnings: result.warnings || [],
+    operations: Array.isArray(result.operations) ? result.operations.slice(0, 120) : undefined,
+  };
+  elements.serverBuilderResult.textContent = JSON.stringify(output, null, 2);
+}
+
+function renderServerBuilderError(error) {
+  setServerBuilderStatus(error.message);
+  elements.serverBuilderResult.textContent = JSON.stringify({
+    ok: false,
+    error: error.message,
+  }, null, 2);
+  renderServerBuilder();
+}
+
+function setServerBuilderStatus(message) {
+  elements.serverBuilderStatus.textContent = message;
 }
 
 function setRemoteMessageStatus(message) {

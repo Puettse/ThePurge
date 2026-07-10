@@ -240,6 +240,23 @@ textarea {
   font-size: 13px;
 }
 
+.server-builder-output {
+  margin-top: 14px;
+}
+
+.result-box {
+  min-height: 180px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #303640;
+  border-radius: 6px;
+  padding: 10px;
+  background: #111318;
+  color: #d8dee9;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  white-space: pre-wrap;
+}
+
 .muted {
   color: #8f97a5;
 }

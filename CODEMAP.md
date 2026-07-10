@@ -12,6 +12,7 @@ Last updated: 2026-07-05
 - `src/config.js` reads Railway, Discord, and PostgreSQL environment variables.
 - `src/db/index.js` creates the PostgreSQL client, owns schema migration, records known modules, and ensures guild defaults.
 - `remote_voice_events` and `remote_voice_clips` store protected dashboard-only voice activity records and WAV clips.
+- `server_builder_configs`, `server_builder_mappings`, and `server_builder_runs` store dashboard-only Server Builder uploads, Discord ID mappings, and dry-run/apply history.
 - `railway.json` pins Railway build/deploy config, health check, and restart policy.
 
 ## Discord Bot
@@ -37,6 +38,7 @@ Last updated: 2026-07-05
 - `src/services/schedulerTasks.js` contains scheduler task helpers.
 - `src/services/ticketService.js` creates ticket panels, opens private channels, claims tickets, closes tickets, and stores transcripts.
 - `src/services/remoteControlService.js` owns dashboard remote messages, file sends, voice joins/leaves, dashboard audio transmission, inbound voice receiving, and protected voice records/clips.
+- `src/services/serverBuilderService.js` owns dashboard-only server blueprint parsing, schema validation, dry-run planning, safe apply behavior, config mirroring, mappings, and run records.
 
 ## Dashboard
 
@@ -46,12 +48,14 @@ Last updated: 2026-07-05
 - `src/web/webActions.js` contains dashboard-triggered moderation actions.
 - `src/web/routes/` composes dashboard routes with lazy-loaded module boundaries.
 - `src/web/routes/modules/` contains independently loaded dashboard modules for settings, overview, automation, moderation, tickets, and remote ops.
+- `src/web/routes/modules/serverBuilder.js` exposes Administrator-gated dashboard APIs for Server Builder config upload, validation, preview, apply, and run history.
 - `public/index.html`, `public/styles.css`, and `public/app.js` implement the browser control panel.
 
 ## Scripts and Tests
 
 - `scripts/fix_db.js` is legacy database repair tooling.
 - `tests/*.test.js` cover pure shared behavior that can run without live Discord/Railway services.
+- `docs/server-builder.example.yaml` is the canonical Server Builder example config based on the Domus-Ursi template.
 - `docs/code-reviews/*.md` stores lifecycle code review records for significant changes.
 
 ## Important Operational Notes

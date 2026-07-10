@@ -2,6 +2,19 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.4.0] - 2026-07-10
+
+### Added
+
+- Added dashboard-only Server Builder for uploading, validating, previewing, and applying YAML/JSON Discord server blueprints.
+- Added PostgreSQL-backed Server Builder config storage, key-to-Discord-ID mappings, run history, and local mirrored config files.
+- Added the Domus-Ursi Server Builder example config under `docs/server-builder.example.yaml`.
+
+### Security
+
+- Server Builder apply actions require Discord Administrator permission and are not exposed through slash commands or prefix commands.
+- Server Builder blocks deletes, Administrator grants, and role position moves unless the uploaded config explicitly enables the matching `danger_zone` flag.
+
 ## [4.3.10] - 2026-07-10
 
 ### Added

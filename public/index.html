@@ -31,6 +31,43 @@
         </section>
 
         <section class="panel">
+          <div class="panel-heading">
+            <h2>Server Builder</h2>
+            <button id="serverBuilderRefreshButton" class="secondary" type="button">Refresh</button>
+          </div>
+          <form id="serverBuilderForm">
+            <div class="grid">
+              <label>Config Key <input name="configKey" autocomplete="off" placeholder="domus-ursi" required></label>
+              <label>Build Mode
+                <select name="mode">
+                  <option value="CREATE">CREATE - blank selected guild</option>
+                  <option value="UPDATE" selected>UPDATE - no deletes</option>
+                  <option value="REVAMP">REVAMP - dashboard destructive rebuild</option>
+                  <option value="CLEAN">CLEAN - delete configured cleanup targets</option>
+                </select>
+              </label>
+            </div>
+            <label>Config File <input id="serverBuilderFile" name="file" type="file" accept=".yaml,.yml,.json"></label>
+            <div class="form-actions">
+              <button id="serverBuilderValidateButton" type="submit">Validate</button>
+              <button id="serverBuilderPreviewButton" class="secondary" type="button">Preview</button>
+              <button id="serverBuilderApplyButton" class="secondary" type="button">Apply</button>
+            </div>
+            <p id="serverBuilderStatus" class="status-note"></p>
+          </form>
+          <div class="grid server-builder-output">
+            <div>
+              <h3>Saved Configs</h3>
+              <div id="serverBuilderConfigs" class="list compact-list"></div>
+            </div>
+            <div>
+              <h3>Result</h3>
+              <pre id="serverBuilderResult" class="result-box">Select a server and upload a config.</pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
           <h2>Remote Ops</h2>
           <div class="grid">
             <form id="remoteMessageForm">

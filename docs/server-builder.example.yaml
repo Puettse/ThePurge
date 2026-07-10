@@ -1,0 +1,2341 @@
+schema_version: "1.0"
+
+server:
+  key: "domus-ursi"
+  name: "Domus-Ursi"
+  description: "Enterprise-grade Discord server blueprint for a premium gaming community built around the Domus-Ursi identity: House of the Bear, elite play, structured community, competitive programming, creator ecosystem, support, safety, and staff operations."
+  locale: "en-US"
+
+danger_zone:
+  allow_deletes: false
+  allow_administrator_permission: false
+  allow_role_position_changes: true
+
+colors:
+  brand_primary: "#7C2D12"
+  brand_secondary: "#B45309"
+  brand_accent: "#F59E0B"
+  platinum: "#E5E7EB"
+  gold: "#F59E0B"
+  verified: "#22C55E"
+  guest: "#94A3B8"
+  member: "#38BDF8"
+  competitive: "#EF4444"
+  creator: "#EC4899"
+  partner: "#A855F7"
+  booster: "#F472B6"
+  staff: "#DC2626"
+  senior_staff: "#991B1B"
+  operations: "#0F766E"
+  executive: "#111827"
+  muted: "#64748B"
+
+roles:
+  - key: "guest"
+    name: "Guest"
+    color: "guest"
+    hoist: false
+    mentionable: false
+    position: 10
+    permissions:
+      allow:
+        - ViewChannel
+        - ReadMessageHistory
+      deny:
+        - SendMessages
+        - AttachFiles
+        - EmbedLinks
+
+  - key: "verified-member"
+    name: "Verified Member"
+    color: "verified"
+    hoist: false
+    mentionable: false
+    position: 20
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+        - UseExternalEmojis
+        - UseExternalStickers
+        - CreatePublicThreads
+        - SendMessagesInThreads
+        - UseApplicationCommands
+        - Connect
+        - Speak
+        - Stream
+      deny: []
+
+  - key: "player"
+    name: "Player"
+    color: "member"
+    hoist: false
+    mentionable: false
+    position: 21
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+      deny: []
+
+  - key: "lfg-ping"
+    name: "LFG Ping"
+    color: "brand_accent"
+    hoist: false
+    mentionable: true
+    position: 22
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "events-ping"
+    name: "Events Ping"
+    color: "gold"
+    hoist: false
+    mentionable: true
+    position: 23
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "patch-ping"
+    name: "Patch Notes Ping"
+    color: "brand_primary"
+    hoist: false
+    mentionable: true
+    position: 24
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "competitive"
+    name: "Competitive"
+    color: "competitive"
+    hoist: false
+    mentionable: false
+    position: 30
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - CreatePublicThreads
+        - SendMessagesInThreads
+      deny: []
+
+  - key: "team-captain"
+    name: "Team Captain"
+    color: "gold"
+    hoist: false
+    mentionable: false
+    position: 31
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - CreatePublicThreads
+        - CreatePrivateThreads
+        - SendMessagesInThreads
+      deny: []
+
+  - key: "mentor"
+    name: "Mentor"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 32
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - CreatePublicThreads
+        - SendMessagesInThreads
+        - Connect
+        - Speak
+      deny: []
+
+  - key: "community-mvp"
+    name: "Community MVP"
+    color: "gold"
+    hoist: true
+    mentionable: false
+    position: 40
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+      deny: []
+
+  - key: "creator"
+    name: "Creator"
+    color: "creator"
+    hoist: true
+    mentionable: false
+    position: 45
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+        - CreatePublicThreads
+        - SendMessagesInThreads
+      deny: []
+
+  - key: "partner"
+    name: "Partner"
+    color: "partner"
+    hoist: true
+    mentionable: false
+    position: 46
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+      deny: []
+
+  - key: "server-booster"
+    name: "Server Booster"
+    color: "booster"
+    hoist: false
+    mentionable: false
+    position: 47
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+        - UseExternalEmojis
+        - UseExternalStickers
+      deny: []
+
+  - key: "region-na"
+    name: "NA"
+    color: "brand_primary"
+    hoist: false
+    mentionable: true
+    position: 50
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "region-eu"
+    name: "EU"
+    color: "brand_primary"
+    hoist: false
+    mentionable: true
+    position: 51
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "region-latam"
+    name: "LATAM"
+    color: "brand_primary"
+    hoist: false
+    mentionable: true
+    position: 52
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "region-apac"
+    name: "APAC"
+    color: "brand_primary"
+    hoist: false
+    mentionable: true
+    position: 53
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "platform-pc"
+    name: "PC"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 55
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "platform-playstation"
+    name: "PlayStation"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 56
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "platform-xbox"
+    name: "Xbox"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 57
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "platform-switch"
+    name: "Switch"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 58
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "platform-mobile"
+    name: "Mobile"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 59
+    permissions:
+      allow: []
+      deny: []
+
+  - key: "muted"
+    name: "Muted"
+    color: "muted"
+    hoist: false
+    mentionable: false
+    position: 70
+    permissions:
+      allow:
+        - ViewChannel
+        - ReadMessageHistory
+      deny:
+        - SendMessages
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+        - CreatePublicThreads
+        - CreatePrivateThreads
+        - SendMessagesInThreads
+        - Connect
+        - Speak
+        - Stream
+
+  - key: "staff"
+    name: "Staff"
+    color: "staff"
+    hoist: true
+    mentionable: true
+    position: 78
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "support-specialist"
+    name: "Support Specialist"
+    color: "operations"
+    hoist: true
+    mentionable: false
+    position: 80
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - ModerateMembers
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "event-producer"
+    name: "Event Producer"
+    color: "gold"
+    hoist: true
+    mentionable: false
+    position: 81
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageEvents
+        - ManageMessages
+        - ManageThreads
+        - MoveMembers
+        - MuteMembers
+        - DeafenMembers
+        - RequestToSpeak
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "moderator"
+    name: "Moderator"
+    color: "staff"
+    hoist: true
+    mentionable: true
+    position: 85
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - KickMembers
+        - ModerateMembers
+        - MuteMembers
+        - MoveMembers
+        - UseApplicationCommands
+        - ViewAuditLog
+      deny:
+        - Administrator
+
+  - key: "senior-moderator"
+    name: "Senior Moderator"
+    color: "senior_staff"
+    hoist: true
+    mentionable: true
+    position: 88
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - ManageChannels
+        - KickMembers
+        - BanMembers
+        - ModerateMembers
+        - MuteMembers
+        - DeafenMembers
+        - MoveMembers
+        - ManageEvents
+        - UseApplicationCommands
+        - ViewAuditLog
+      deny:
+        - Administrator
+
+  - key: "community-manager"
+    name: "Community Manager"
+    color: "operations"
+    hoist: true
+    mentionable: true
+    position: 90
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - ManageChannels
+        - ManageRoles
+        - ManageEvents
+        - ManageWebhooks
+        - KickMembers
+        - BanMembers
+        - ModerateMembers
+        - ViewAuditLog
+        - ViewGuildInsights
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "official-team"
+    name: "Official Team"
+    color: "brand_secondary"
+    hoist: true
+    mentionable: true
+    position: 92
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AttachFiles
+        - EmbedLinks
+        - ManageMessages
+        - ManageThreads
+        - ManageEvents
+        - ManageWebhooks
+        - ViewGuildInsights
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "security-operations"
+    name: "Security Operations"
+    color: "executive"
+    hoist: true
+    mentionable: true
+    position: 95
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - ManageMessages
+        - ManageThreads
+        - ManageChannels
+        - ManageRoles
+        - KickMembers
+        - BanMembers
+        - ModerateMembers
+        - ViewAuditLog
+        - ViewGuildInsights
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+  - key: "bot"
+    name: "Bot"
+    color: "platinum"
+    hoist: false
+    mentionable: false
+    position: 96
+    permissions:
+      allow:
+        - ViewChannel
+        - SendMessages
+        - ReadMessageHistory
+        - AddReactions
+        - AttachFiles
+        - EmbedLinks
+        - ManageMessages
+        - ManageThreads
+        - ManageRoles
+        - ManageEvents
+        - UseApplicationCommands
+      deny:
+        - Administrator
+
+categories:
+  - key: "start-here"
+    name: "START HERE"
+    position: 1
+    description: "High-conversion entry flow: welcome, rules, verification, onboarding, and server map."
+    permission_overwrites:
+      - target: "@everyone"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - AttachFiles
+          - EmbedLinks
+      - target: "role:guest"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - AttachFiles
+          - EmbedLinks
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "official"
+    name: "OFFICIAL"
+    position: 2
+    description: "Authoritative read-only brand, news, events, patch, and status communications."
+    permission_overwrites:
+      - target: "@everyone"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+          - AddReactions
+        deny:
+          - SendMessages
+          - AttachFiles
+          - EmbedLinks
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+          - AddReactions
+        deny:
+          - SendMessages
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:community-manager"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+          - ManageMessages
+          - ManageThreads
+        deny: []
+
+  - key: "community-hub"
+    name: "COMMUNITY HUB"
+    position: 3
+    description: "Primary verified member social layer for retention, culture, clips, memes, intros, and daily conversation."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - UseExternalEmojis
+          - UseExternalStickers
+          - CreatePublicThreads
+          - SendMessagesInThreads
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+
+  - key: "play-together"
+    name: "PLAY TOGETHER"
+    position: 4
+    description: "LFG, matchmaking, squad rooms, coaching, and game-session coordination."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+          - Connect
+          - Speak
+          - Stream
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - Connect
+          - Speak
+          - Stream
+          - MoveMembers
+          - MuteMembers
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - Connect
+          - Speak
+          - Stream
+
+  - key: "game-intel"
+    name: "GAME INTEL"
+    position: 5
+    description: "Strategy, guides, patch analysis, meta discussions, VOD reviews, and player education."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+        deny: []
+      - target: "role:mentor"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageThreads
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+
+  - key: "competitive-arena"
+    name: "COMPETITIVE ARENA"
+    position: 6
+    description: "Ranked players, scrims, team recruitment, tournament operations, leaderboards, and competitive announcements."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:competitive"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+          - Connect
+          - Speak
+          - Stream
+        deny: []
+      - target: "role:team-captain"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - CreatePrivateThreads
+          - SendMessagesInThreads
+        deny: []
+      - target: "role:event-producer"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ManageEvents
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - Connect
+          - Speak
+          - Stream
+        deny: []
+
+  - key: "creator-lab"
+    name: "CREATOR LAB"
+    position: 7
+    description: "Creator ecosystem for UGC, streams, clips, collaborations, brand assets, and partner activations."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:creator"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+        deny: []
+      - target: "role:partner"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+
+  - key: "support-feedback"
+    name: "SUPPORT & FEEDBACK"
+    position: 8
+    description: "Structured support, bug reporting, feature feedback, player reports, and escalation intake."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+          - CreatePublicThreads
+          - SendMessagesInThreads
+        deny: []
+      - target: "role:support-specialist"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ModerateMembers
+        deny: []
+      - target: "role:moderator"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ModerateMembers
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+
+  - key: "events-live"
+    name: "EVENTS & LIVE"
+    position: 9
+    description: "Stage events, AMAs, watch parties, event chat, live announcements, and community programming."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - Connect
+          - Speak
+          - RequestToSpeak
+        deny: []
+      - target: "role:event-producer"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageEvents
+          - ManageMessages
+          - ManageThreads
+          - MuteMembers
+          - DeafenMembers
+          - MoveMembers
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageEvents
+          - RequestToSpeak
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - Connect
+          - Speak
+          - RequestToSpeak
+        deny: []
+
+  - key: "regional-lounges"
+    name: "REGIONAL LOUNGES"
+    position: 10
+    description: "Region-based social and matchmaking channels assigned through onboarding."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:verified-member"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "staff-zone"
+    name: "STAFF ZONE"
+    position: 90
+    description: "Private daily operations for support, moderation, content, events, insights, and community health."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:support-specialist"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+        deny: []
+      - target: "role:moderator"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ModerateMembers
+        deny: []
+      - target: "role:senior-moderator"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ManageChannels
+          - KickMembers
+          - BanMembers
+          - ModerateMembers
+          - ViewAuditLog
+        deny: []
+      - target: "role:community-manager"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ManageChannels
+          - ManageRoles
+          - ManageEvents
+          - ViewAuditLog
+          - ViewGuildInsights
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+        deny: []
+
+  - key: "leadership-suite"
+    name: "LEADERSHIP SUITE"
+    position: 99
+    description: "Restricted leadership, security, brand-risk, launch-readiness, and partner operations."
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:community-manager"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ViewAuditLog
+          - ViewGuildInsights
+        deny: []
+      - target: "role:security-operations"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ManageChannels
+          - ManageRoles
+          - KickMembers
+          - BanMembers
+          - ModerateMembers
+          - ViewAuditLog
+          - ViewGuildInsights
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ViewGuildInsights
+        deny: []
+
+channels:
+  - key: "welcome"
+    name: "welcome"
+    type: "text"
+    category: "start-here"
+    position: 1
+    description: "Premium first-impression channel for Domus-Ursi: the House of the Bear, built for elite play, strong community culture, and organized gaming."
+    topic: "Welcome to Domus-Ursi. Enter the House of the Bear, read the rules, verify, then choose your roles."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "rules"
+    name: "rules"
+    type: "text"
+    category: "start-here"
+    position: 2
+    description: "Clear, brand-safe code of conduct and enforcement philosophy."
+    topic: "Read and accept the community standards before participating."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "verify"
+    name: "verify"
+    type: "text"
+    category: "start-here"
+    position: 3
+    description: "Verification instructions for unlocking member access."
+    topic: "Verify to unlock the full server."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "@everyone"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - AttachFiles
+          - EmbedLinks
+      - target: "role:guest"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "choose-roles"
+    name: "choose-roles"
+    type: "text"
+    category: "start-here"
+    position: 4
+    description: "Role selection hub for region, platform, interests, pings, competitive access, and creator access."
+    topic: "Use onboarding or role buttons to personalize your server experience."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "server-map"
+    name: "server-map"
+    type: "text"
+    category: "start-here"
+    position: 5
+    description: "Concise navigation guide to reduce new-member friction."
+    topic: "Find the right channel fast."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "faq"
+    name: "faq"
+    type: "text"
+    category: "start-here"
+    position: 6
+    description: "Frequently asked questions covering server access, events, LFG, support, and creator requirements."
+    topic: "Answers to common community questions."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "announcements"
+    name: "announcements"
+    type: "announcement"
+    category: "official"
+    position: 1
+    description: "Primary official communication channel for Domus-Ursi."
+    topic: "Official Domus-Ursi news, milestones, launches, and major updates."
+    nsfw: false
+    sync_permissions_with_category: true
+
+  - key: "patch-notes"
+    name: "patch-notes"
+    type: "announcement"
+    category: "official"
+    position: 2
+    description: "Game updates, balance notes, hotfixes, and release notes."
+    topic: "Follow for official patch and game update notices."
+    nsfw: false
+    sync_permissions_with_category: true
+
+  - key: "server-status"
+    name: "server-status"
+    type: "announcement"
+    category: "official"
+    position: 3
+    description: "Service health, downtime, maintenance windows, and incident updates."
+    topic: "Operational status and live-service notices."
+    nsfw: false
+    sync_permissions_with_category: true
+
+  - key: "event-calendar"
+    name: "event-calendar"
+    type: "text"
+    category: "official"
+    position: 4
+    description: "Upcoming tournaments, AMAs, watch parties, drops, community nights, and live programming."
+    topic: "Upcoming community programming and RSVP prompts."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "official-polls"
+    name: "official-polls"
+    type: "text"
+    category: "official"
+    position: 5
+    description: "Controlled official polling channel for feedback snapshots."
+    topic: "Vote on official polls and product/community questions."
+    nsfw: false
+    slowmode_seconds: 30
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+          - AddReactions
+        deny:
+          - SendMessages
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "general"
+    name: "general"
+    type: "text"
+    category: "community-hub"
+    position: 1
+    description: "Main verified member chat."
+    topic: "Daily community conversation. Keep it welcoming, useful, and on-brand."
+    nsfw: false
+    slowmode_seconds: 3
+    sync_permissions_with_category: true
+
+  - key: "introductions"
+    name: "introductions"
+    type: "text"
+    category: "community-hub"
+    position: 2
+    description: "New member introductions and icebreakers."
+    topic: "Tell us your region, platform, main games, and what you are here for."
+    nsfw: false
+    slowmode_seconds: 15
+    sync_permissions_with_category: true
+
+  - key: "clips-and-highlights"
+    name: "clips-and-highlights"
+    type: "forum"
+    category: "community-hub"
+    position: 3
+    description: "Forum for gameplay clips, highlights, screenshots, and member wins."
+    topic: "Post your best plays, funny moments, screenshots, and community highlights."
+    nsfw: false
+    default_auto_archive_duration_minutes: 4320
+    default_reaction_emoji: "🏆"
+    available_tags:
+      - name: "Clip"
+        emoji: "🎬"
+        moderated: false
+      - name: "Screenshot"
+        emoji: "📸"
+        moderated: false
+      - name: "Win"
+        emoji: "🏆"
+        moderated: false
+      - name: "Funny"
+        emoji: "😂"
+        moderated: false
+      - name: "Staff Pick"
+        emoji: "⭐"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "memes"
+    name: "memes"
+    type: "text"
+    category: "community-hub"
+    position: 4
+    description: "Lightweight humor channel to preserve culture without derailing general chat."
+    topic: "Keep it fun, original, and within server rules."
+    nsfw: false
+    slowmode_seconds: 10
+    sync_permissions_with_category: true
+
+  - key: "off-topic"
+    name: "off-topic"
+    type: "text"
+    category: "community-hub"
+    position: 5
+    description: "Non-game conversation channel."
+    topic: "General lifestyle, tech, entertainment, and casual conversation."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "community-wins"
+    name: "community-wins"
+    type: "text"
+    category: "community-hub"
+    position: 6
+    description: "Recognition channel for Domus-Ursi milestones, player achievements, event winners, and standout contributors."
+    topic: "Celebrate victories from the House of the Bear."
+    nsfw: false
+    slowmode_seconds: 20
+    sync_permissions_with_category: true
+
+  - key: "lfg-forum"
+    name: "lfg-forum"
+    type: "forum"
+    category: "play-together"
+    position: 1
+    description: "Structured looking-for-group board for casual, ranked, regional, and platform-based sessions."
+    topic: "Create a post with mode, region, platform, mic preference, rank, and session time."
+    nsfw: false
+    default_auto_archive_duration_minutes: 1440
+    default_reaction_emoji: "🎮"
+    available_tags:
+      - name: "Casual"
+        emoji: "🕹️"
+        moderated: false
+      - name: "Ranked"
+        emoji: "⚔️"
+        moderated: false
+      - name: "Beginner Friendly"
+        emoji: "🌱"
+        moderated: false
+      - name: "Need Mic"
+        emoji: "🎙️"
+        moderated: false
+      - name: "No Mic"
+        emoji: "🔇"
+        moderated: false
+      - name: "NA"
+        emoji: "🌎"
+        moderated: false
+      - name: "EU"
+        emoji: "🌍"
+        moderated: false
+      - name: "LATAM"
+        emoji: "🌎"
+        moderated: false
+      - name: "APAC"
+        emoji: "🌏"
+        moderated: false
+      - name: "Full Party"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "squad-chat"
+    name: "squad-chat"
+    type: "text"
+    category: "play-together"
+    position: 2
+    description: "Fast-moving coordination chat for active sessions."
+    topic: "Coordinate active parties. Use the LFG forum for longer posts."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "coaching-corner"
+    name: "coaching-corner"
+    type: "forum"
+    category: "play-together"
+    position: 3
+    description: "Peer coaching, advice requests, and mentor-led improvement posts."
+    topic: "Ask for gameplay advice, VOD review, role help, and improvement plans."
+    nsfw: false
+    default_auto_archive_duration_minutes: 4320
+    default_reaction_emoji: "🧠"
+    available_tags:
+      - name: "Beginner Help"
+        emoji: "🌱"
+        moderated: false
+      - name: "VOD Review"
+        emoji: "🎥"
+        moderated: false
+      - name: "Mechanics"
+        emoji: "🎯"
+        moderated: false
+      - name: "Strategy"
+        emoji: "🧠"
+        moderated: false
+      - name: "Mentor Answered"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "duo-room-1"
+    name: "duo-room-1"
+    type: "voice"
+    category: "play-together"
+    position: 4
+    description: "Two-player voice room."
+    user_limit: 2
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "squad-room-1"
+    name: "squad-room-1"
+    type: "voice"
+    category: "play-together"
+    position: 5
+    description: "Standard squad voice room."
+    user_limit: 5
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "squad-room-2"
+    name: "squad-room-2"
+    type: "voice"
+    category: "play-together"
+    position: 6
+    description: "Standard squad voice room."
+    user_limit: 5
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "community-lounge"
+    name: "community-lounge"
+    type: "voice"
+    category: "play-together"
+    position: 7
+    description: "Open social voice channel."
+    user_limit: 35
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "game-discussion"
+    name: "game-discussion"
+    type: "text"
+    category: "game-intel"
+    position: 1
+    description: "Main game discussion and theory channel."
+    topic: "Discuss gameplay, strategy, updates, and community observations."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "guides-and-builds"
+    name: "guides-and-builds"
+    type: "forum"
+    category: "game-intel"
+    position: 2
+    description: "High-signal guide library for builds, loadouts, tactics, and educational posts."
+    topic: "Post structured guides with clear title, version, mode, and intended skill level."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "📘"
+    available_tags:
+      - name: "Beginner"
+        emoji: "🌱"
+        moderated: false
+      - name: "Advanced"
+        emoji: "🧬"
+        moderated: false
+      - name: "Loadout"
+        emoji: "🧰"
+        moderated: false
+      - name: "Map"
+        emoji: "🗺️"
+        moderated: false
+      - name: "Meta"
+        emoji: "📈"
+        moderated: false
+      - name: "Verified Guide"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "patch-discussion"
+    name: "patch-discussion"
+    type: "text"
+    category: "game-intel"
+    position: 3
+    description: "Member discussion of patch notes, balance changes, and meta shifts."
+    topic: "Discuss the latest updates and their impact on gameplay."
+    nsfw: false
+    slowmode_seconds: 10
+    sync_permissions_with_category: true
+
+  - key: "meta-lab"
+    name: "meta-lab"
+    type: "forum"
+    category: "game-intel"
+    position: 4
+    description: "Deep-dive analysis forum for competitive and casual strategy."
+    topic: "Theorycraft, test, document, and debate the evolving meta."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "🧪"
+    available_tags:
+      - name: "Theory"
+        emoji: "🧪"
+        moderated: false
+      - name: "Data"
+        emoji: "📊"
+        moderated: false
+      - name: "Balance"
+        emoji: "⚖️"
+        moderated: false
+      - name: "Counterplay"
+        emoji: "🛡️"
+        moderated: false
+      - name: "Needs Testing"
+        emoji: "🔬"
+        moderated: false
+    sync_permissions_with_category: true
+
+  - key: "ranked-chat"
+    name: "ranked-chat"
+    type: "text"
+    category: "competitive-arena"
+    position: 1
+    description: "Competitive discussion channel."
+    topic: "Ranked discussion, competitive meta, serious improvement, and team coordination."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "scrim-board"
+    name: "scrim-board"
+    type: "forum"
+    category: "competitive-arena"
+    position: 2
+    description: "Structured scrim finder for teams and captains."
+    topic: "Post scrim requests with rank, region, platform, format, and time."
+    nsfw: false
+    default_auto_archive_duration_minutes: 1440
+    default_reaction_emoji: "⚔️"
+    available_tags:
+      - name: "NA"
+        emoji: "🌎"
+        moderated: false
+      - name: "EU"
+        emoji: "🌍"
+        moderated: false
+      - name: "LATAM"
+        emoji: "🌎"
+        moderated: false
+      - name: "APAC"
+        emoji: "🌏"
+        moderated: false
+      - name: "Open Slot"
+        emoji: "🟢"
+        moderated: false
+      - name: "Booked"
+        emoji: "🔒"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "team-recruitment"
+    name: "team-recruitment"
+    type: "forum"
+    category: "competitive-arena"
+    position: 3
+    description: "Team recruitment and player free-agent board."
+    topic: "Teams recruiting and players looking for serious squads."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "🧩"
+    available_tags:
+      - name: "Recruiting"
+        emoji: "📣"
+        moderated: false
+      - name: "Free Agent"
+        emoji: "🧍"
+        moderated: false
+      - name: "Coach"
+        emoji: "🧠"
+        moderated: false
+      - name: "Analyst"
+        emoji: "📊"
+        moderated: false
+      - name: "Filled"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "tournament-announcements"
+    name: "tournament-announcements"
+    type: "announcement"
+    category: "competitive-arena"
+    position: 4
+    description: "Official competitive event announcements."
+    topic: "Tournament rules, brackets, check-in windows, and result notices."
+    nsfw: false
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:competitive"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+          - AddReactions
+        deny:
+          - SendMessages
+      - target: "role:event-producer"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+          - ManageThreads
+          - ManageEvents
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "leaderboards"
+    name: "leaderboards"
+    type: "text"
+    category: "competitive-arena"
+    position: 5
+    description: "Leaderboard snapshots, event standings, and seasonal recognition."
+    topic: "Competitive standings and season highlights."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:competitive"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+          - AddReactions
+        deny:
+          - SendMessages
+      - target: "role:event-producer"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "creator-lounge"
+    name: "creator-lounge"
+    type: "text"
+    category: "creator-lab"
+    position: 1
+    description: "Private creator networking and coordination channel."
+    topic: "Creator collaboration, campaign planning, and approved creator discussion."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "creator-showcase"
+    name: "creator-showcase"
+    type: "forum"
+    category: "creator-lab"
+    position: 2
+    description: "Creator content showcase and discovery board."
+    topic: "Share high-quality videos, streams, builds, tutorials, and community content."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "🎥"
+    available_tags:
+      - name: "Video"
+        emoji: "🎥"
+        moderated: false
+      - name: "Stream"
+        emoji: "🔴"
+        moderated: false
+      - name: "Guide"
+        emoji: "📘"
+        moderated: false
+      - name: "Short"
+        emoji: "⚡"
+        moderated: false
+      - name: "Staff Pick"
+        emoji: "⭐"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "going-live"
+    name: "going-live"
+    type: "text"
+    category: "creator-lab"
+    position: 3
+    description: "Approved creator live notifications."
+    topic: "Approved creators may share live notices within posting limits."
+    nsfw: false
+    slowmode_seconds: 3600
+    sync_permissions_with_category: true
+
+  - key: "brand-assets"
+    name: "brand-assets"
+    type: "text"
+    category: "creator-lab"
+    position: 4
+    description: "Read-only creator brand kit, content rules, asset guidance, and campaign briefs."
+    topic: "Approved brand assets, creator guidelines, and usage rules."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:creator"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+          - ManageMessages
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+
+  - key: "collab-board"
+    name: "collab-board"
+    type: "forum"
+    category: "creator-lab"
+    position: 5
+    description: "Creator collaboration request board."
+    topic: "Find collaborators, co-streamers, editors, tournament casters, and project partners."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "🤝"
+    available_tags:
+      - name: "Collab"
+        emoji: "🤝"
+        moderated: false
+      - name: "Editor Needed"
+        emoji: "✂️"
+        moderated: false
+      - name: "Caster Needed"
+        emoji: "🎙️"
+        moderated: false
+      - name: "Sponsor Friendly"
+        emoji: "💼"
+        moderated: false
+      - name: "Closed"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "help-desk"
+    name: "help-desk"
+    type: "forum"
+    category: "support-feedback"
+    position: 1
+    description: "Structured help forum for account, access, server, event, and gameplay questions."
+    topic: "Create one post per issue. Include platform, region, screenshots, and steps already tried."
+    nsfw: false
+    default_auto_archive_duration_minutes: 4320
+    default_reaction_emoji: "🛟"
+    available_tags:
+      - name: "Account"
+        emoji: "👤"
+        moderated: false
+      - name: "Server Access"
+        emoji: "🔐"
+        moderated: false
+      - name: "Gameplay"
+        emoji: "🎮"
+        moderated: false
+      - name: "Events"
+        emoji: "📅"
+        moderated: false
+      - name: "Answered"
+        emoji: "✅"
+        moderated: true
+      - name: "Staff Needed"
+        emoji: "🚨"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "bug-reports"
+    name: "bug-reports"
+    type: "forum"
+    category: "support-feedback"
+    position: 2
+    description: "Actionable bug intake forum."
+    topic: "Include build/version, platform, region, reproduction steps, expected result, actual result, and media if useful."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "🐛"
+    available_tags:
+      - name: "PC"
+        emoji: "🖥️"
+        moderated: false
+      - name: "Console"
+        emoji: "🎮"
+        moderated: false
+      - name: "Mobile"
+        emoji: "📱"
+        moderated: false
+      - name: "Crash"
+        emoji: "💥"
+        moderated: false
+      - name: "Exploit"
+        emoji: "🚨"
+        moderated: true
+      - name: "Under Review"
+        emoji: "👀"
+        moderated: true
+      - name: "Resolved"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "feedback-lab"
+    name: "feedback-lab"
+    type: "forum"
+    category: "support-feedback"
+    position: 3
+    description: "Feature requests, quality-of-life ideas, balance feedback, and community proposals."
+    topic: "One idea per post. Explain the problem, proposed change, and expected impact."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "💡"
+    available_tags:
+      - name: "Feature"
+        emoji: "💡"
+        moderated: false
+      - name: "Balance"
+        emoji: "⚖️"
+        moderated: false
+      - name: "QoL"
+        emoji: "🛠️"
+        moderated: false
+      - name: "Community"
+        emoji: "🌐"
+        moderated: false
+      - name: "Under Review"
+        emoji: "👀"
+        moderated: true
+      - name: "Implemented"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "report-safety"
+    name: "report-safety"
+    type: "text"
+    category: "support-feedback"
+    position: 4
+    description: "Read-only instructions for confidential reports, player safety, scams, harassment, and escalation."
+    topic: "For sensitive reports, use the official ticket/report workflow. Do not post private evidence publicly."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:verified-member"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+          - AttachFiles
+          - EmbedLinks
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:moderator"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+
+  - key: "main-stage"
+    name: "main-stage"
+    type: "stage"
+    category: "events-live"
+    position: 1
+    description: "Large-format stage for AMAs, patch previews, interviews, and official broadcasts."
+    topic: "Official live programming and stage events."
+    nsfw: false
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "event-chat"
+    name: "event-chat"
+    type: "text"
+    category: "events-live"
+    position: 2
+    description: "Live text companion for events."
+    topic: "Discuss the live event, ask questions, and follow moderator instructions."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: true
+
+  - key: "ama-questions"
+    name: "ama-questions"
+    type: "forum"
+    category: "events-live"
+    position: 3
+    description: "Question collection forum for AMAs and developer/community panels."
+    topic: "Submit one clear question per post. Vote with reactions."
+    nsfw: false
+    default_auto_archive_duration_minutes: 4320
+    default_reaction_emoji: "❓"
+    available_tags:
+      - name: "Gameplay"
+        emoji: "🎮"
+        moderated: false
+      - name: "Balance"
+        emoji: "⚖️"
+        moderated: false
+      - name: "Roadmap"
+        emoji: "🗺️"
+        moderated: false
+      - name: "Community"
+        emoji: "🌐"
+        moderated: false
+      - name: "Answered Live"
+        emoji: "✅"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "watch-party"
+    name: "watch-party"
+    type: "voice"
+    category: "events-live"
+    position: 4
+    description: "Community viewing room for live events, tournaments, and premieres."
+    user_limit: 99
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "green-room"
+    name: "green-room"
+    type: "voice"
+    category: "events-live"
+    position: 5
+    description: "Private event staging room for speakers, staff, and creators."
+    user_limit: 20
+    bitrate: 64000
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "role:verified-member"
+        allow: []
+        deny:
+          - ViewChannel
+          - Connect
+      - target: "role:event-producer"
+        allow:
+          - ViewChannel
+          - Connect
+          - Speak
+          - Stream
+          - MoveMembers
+          - MuteMembers
+        deny: []
+      - target: "role:official-team"
+        allow:
+          - ViewChannel
+          - Connect
+          - Speak
+          - Stream
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - Connect
+          - Speak
+          - Stream
+          - MoveMembers
+        deny: []
+      - target: "role:creator"
+        allow:
+          - ViewChannel
+          - Connect
+          - Speak
+          - Stream
+        deny: []
+
+  - key: "na-lounge"
+    name: "na-lounge"
+    type: "text"
+    category: "regional-lounges"
+    position: 1
+    description: "North America regional channel."
+    topic: "NA matchmaking, events, and regional discussion."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:region-na"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+
+  - key: "eu-lounge"
+    name: "eu-lounge"
+    type: "text"
+    category: "regional-lounges"
+    position: 2
+    description: "Europe regional channel."
+    topic: "EU matchmaking, events, and regional discussion."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:region-eu"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+
+  - key: "latam-lounge"
+    name: "latam-lounge"
+    type: "text"
+    category: "regional-lounges"
+    position: 3
+    description: "LATAM regional channel."
+    topic: "LATAM matchmaking, events, and regional discussion."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:region-latam"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+
+  - key: "apac-lounge"
+    name: "apac-lounge"
+    type: "text"
+    category: "regional-lounges"
+    position: 4
+    description: "APAC regional channel."
+    topic: "APAC matchmaking, events, and regional discussion."
+    nsfw: false
+    slowmode_seconds: 5
+    sync_permissions_with_category: false
+    permission_overwrites:
+      - target: "@everyone"
+        allow: []
+        deny:
+          - ViewChannel
+      - target: "role:region-apac"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - AddReactions
+          - AttachFiles
+          - EmbedLinks
+        deny: []
+      - target: "role:staff"
+        allow:
+          - ViewChannel
+          - SendMessages
+          - ReadMessageHistory
+          - ManageMessages
+        deny: []
+      - target: "role:muted"
+        allow:
+          - ViewChannel
+          - ReadMessageHistory
+        deny:
+          - SendMessages
+
+  - key: "staff-chat"
+    name: "staff-chat"
+    type: "text"
+    category: "staff-zone"
+    position: 1
+    description: "Private daily staff coordination."
+    topic: "Daily staff operations, announcements, questions, and handoffs."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "mod-queue"
+    name: "mod-queue"
+    type: "text"
+    category: "staff-zone"
+    position: 2
+    description: "Moderation triage queue for reports, escalations, and unresolved issues."
+    topic: "Triage incidents, assign owners, and document next actions."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "case-log"
+    name: "case-log"
+    type: "text"
+    category: "staff-zone"
+    position: 3
+    description: "Moderation action log and case record."
+    topic: "Source of truth for warnings, timeouts, kicks, bans, reversals, and appeal notes."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "audit-log"
+    name: "audit-log"
+    type: "text"
+    category: "staff-zone"
+    position: 4
+    description: "Bot/server audit feed for permission changes, channel changes, role changes, message deletes, and security events."
+    topic: "System audit logging and server-change review."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "discord-updates"
+    name: "discord-updates"
+    type: "text"
+    category: "staff-zone"
+    position: 5
+    description: "Moderator-only Discord community updates channel."
+    topic: "Discord platform updates relevant to server operations."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "support-ops"
+    name: "support-ops"
+    type: "text"
+    category: "staff-zone"
+    position: 6
+    description: "Support team coordination and SLA tracking."
+    topic: "Support triage, response quality, documentation, and escalation notes."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "content-calendar"
+    name: "content-calendar"
+    type: "text"
+    category: "staff-zone"
+    position: 7
+    description: "Programming calendar for announcements, events, campaigns, creator drops, and seasonal beats."
+    topic: "Editorial calendar and community programming roadmap."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "community-insights"
+    name: "community-insights"
+    type: "text"
+    category: "staff-zone"
+    position: 8
+    description: "Community analytics, sentiment snapshots, retention notes, and weekly health reports."
+    topic: "Track engagement, retention, risk, support load, and community health."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "incident-room"
+    name: "incident-room"
+    type: "voice"
+    category: "staff-zone"
+    position: 9
+    description: "Private live incident-response voice room."
+    user_limit: 12
+    bitrate: 64000
+    sync_permissions_with_category: true
+
+  - key: "executive-briefing"
+    name: "executive-briefing"
+    type: "text"
+    category: "leadership-suite"
+    position: 1
+    description: "Leadership-only briefings, high-risk decisions, brand risk, and strategic updates."
+    topic: "Executive summaries, risk review, and launch-readiness decisions."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "security-watch"
+    name: "security-watch"
+    type: "text"
+    category: "leadership-suite"
+    position: 2
+    description: "Restricted security channel for raids, scams, impersonation, sensitive abuse patterns, and coordinated attacks."
+    topic: "Security operations, threat monitoring, and incident containment."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+  - key: "partner-pipeline"
+    name: "partner-pipeline"
+    type: "forum"
+    category: "leadership-suite"
+    position: 3
+    description: "Private partnership, creator deal, sponsor, and collaboration pipeline."
+    topic: "Track partner opportunities, approvals, campaign requirements, and deliverables."
+    nsfw: false
+    default_auto_archive_duration_minutes: 10080
+    default_reaction_emoji: "💼"
+    available_tags:
+      - name: "Inbound"
+        emoji: "📥"
+        moderated: true
+      - name: "Approved"
+        emoji: "✅"
+        moderated: true
+      - name: "Legal Review"
+        emoji: "⚖️"
+        moderated: true
+      - name: "Campaign"
+        emoji: "📣"
+        moderated: true
+      - name: "Closed"
+        emoji: "🔒"
+        moderated: true
+    sync_permissions_with_category: true
+
+  - key: "launch-control"
+    name: "launch-control"
+    type: "text"
+    category: "leadership-suite"
+    position: 4
+    description: "Launch, patch, incident, and major-campaign command center."
+    topic: "Go/no-go decisions, launch tasks, owner assignments, and final checks."
+    nsfw: false
+    slowmode_seconds: 0
+    sync_permissions_with_category: true
+
+post_build:
+  summary_channel_key: "staff-chat"
+  send_summary_message: true
+  audit_log_reason: "Domus-Ursi enterprise gaming community blueprint apply"
