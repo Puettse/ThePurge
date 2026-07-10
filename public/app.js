@@ -48,6 +48,9 @@ const elements = {
   remoteTextChannel: document.querySelector('#remoteTextChannel'),
   remoteFiles: document.querySelector('#remoteFiles'),
   remoteMessageStatus: document.querySelector('#remoteMessageStatus'),
+  inviteMemberForm: document.querySelector('#inviteMemberForm'),
+  inviteChannel: document.querySelector('#inviteChannel'),
+  inviteMemberStatus: document.querySelector('#inviteMemberStatus'),
   remoteVoiceForm: document.querySelector('#remoteVoiceForm'),
   remoteVoiceChannel: document.querySelector('#remoteVoiceChannel'),
   remoteVoiceLeaveButton: document.querySelector('#remoteVoiceLeaveButton'),
@@ -177,16 +180,19 @@ function renderRemoteOps() {
   const voiceChannels = state.remoteChannels.voiceChannels || [];
 
   populateChannelSelect(elements.remoteTextChannel, textChannels, 'Select text channel');
+  populateChannelSelect(elements.inviteChannel, textChannels, 'Select invite channel');
   populateChannelSelect(elements.remoteVoiceChannel, voiceChannels, 'Select voice channel');
 
   const hasTextChannel = textChannels.length > 0;
   const hasVoiceChannel = voiceChannels.length > 0;
   elements.remoteMessageForm.querySelector('button[type="submit"]').disabled = !selectedGuildId || !hasTextChannel;
+  elements.inviteMemberForm.querySelector('button[type="submit"]').disabled = !selectedGuildId || !hasTextChannel;
   elements.remoteVoiceForm.querySelector('button[type="submit"]').disabled = !selectedGuildId || !hasVoiceChannel;
   elements.remoteVoiceLeaveButton.disabled = !selectedGuildId;
 
   if (state.remoteError) {
     elements.remoteMessageStatus.textContent = state.remoteError;
+    elements.inviteMemberStatus.textContent = state.remoteError;
     elements.remoteVoiceStatus.textContent = state.remoteError;
     updateVoiceCaptureControls();
     return;
@@ -194,8 +200,10 @@ function renderRemoteOps() {
 
   if (!hasTextChannel) {
     elements.remoteMessageStatus.textContent = 'No text channels available.';
+    elements.inviteMemberStatus.textContent = 'No invite-capable text channels available.';
   } else if (!elements.remoteMessageStatus.dataset.locked) {
     elements.remoteMessageStatus.textContent = '';
+    if (!elements.inviteMemberStatus.dataset.locked) elements.inviteMemberStatus.textContent = '';
   }
 
   const connectedChannel = voiceChannels.find((channel) => channel.id === state.remoteVoice.channelId);
@@ -404,6 +412,29 @@ function bindForms() {
     }
   };
 
+  elements.inviteMemberForm.onsubmit = async (event) => {
+    event.preventDefault();
+    setInviteMemberStatus('Creating invite...');
+
+    try {
+      requireGuildSelection();
+      const selectedChannelId = elements.inviteChannel.value;
+      const result = await api(`/api/guilds/${selectedGuildId}/invites`, {
+        method: 'POST',
+        body: {
+          target: elements.inviteMemberForm.target.value,
+          channelId: selectedChannelId,
+        },
+      });
+
+      elements.inviteMemberForm.reset();
+      elements.inviteChannel.value = selectedChannelId;
+      setInviteMemberStatus(`${result.message} ${result.dmDelivered ? '' : `Copy link: ${result.inviteUrl}`}`.trim());
+    } catch (error) {
+      setInviteMemberStatus(error.message);
+    }
+  };
+
   elements.remoteVoiceForm.selfMute.onchange = updateRemoteVoiceStateFromForm;
   elements.remoteVoiceForm.selfDeaf.onchange = updateRemoteVoiceStateFromForm;
   bindPushToTalk();
@@ -563,6 +594,11 @@ function readFileAsBase64(file) {
 function setRemoteMessageStatus(message) {
   elements.remoteMessageStatus.dataset.locked = message ? 'true' : '';
   elements.remoteMessageStatus.textContent = message;
+}
+
+function setInviteMemberStatus(message) {
+  elements.inviteMemberStatus.dataset.locked = message ? 'true' : '';
+  elements.inviteMemberStatus.textContent = message;
 }
 
 async function updateRemoteVoiceStateFromForm() {

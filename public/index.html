@@ -43,6 +43,14 @@
               <p id="remoteMessageStatus" class="status-note"></p>
             </form>
 
+            <form id="inviteMemberForm">
+              <h3>Invite Member</h3>
+              <label>Invite Channel <select id="inviteChannel" name="channelId" required></select></label>
+              <label>Username or User ID <input name="target" autocomplete="off" placeholder="123456789012345678 or username" required></label>
+              <button type="submit">Send Invite</button>
+              <p id="inviteMemberStatus" class="status-note"></p>
+            </form>
+
             <form id="remoteVoiceForm">
               <h3>Voice Remote</h3>
               <label>Voice Channel <select id="remoteVoiceChannel" name="channelId" required></select></label>

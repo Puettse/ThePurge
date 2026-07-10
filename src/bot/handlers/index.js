@@ -1,6 +1,7 @@
 const commandLoaders = {
   setup: () => import('./setup.js').then((module) => module.handleSetup),
   dashboard: () => import('./setup.js').then((module) => module.handleDashboard),
+  invite: () => import('./invites.js').then((module) => module.handleInvite),
   purge: () => import('./moderation.js').then((module) => module.handlePurge),
   mod: () => import('./moderation.js').then((module) => module.handleMod),
   automod: () => import('./automation.js').then((module) => module.handleAutomod),

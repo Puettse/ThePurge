@@ -6,7 +6,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 
 ## Implemented Core
 
-- Slash command registry for setup, dashboard, purge, moderation, automod, logs, custom commands, welcome, autoroles, scheduling, rank, economy, and tickets.
+- Slash command registry for setup, dashboard, invite, purge, moderation, automod, logs, custom commands, welcome, autoroles, scheduling, rank, economy, and tickets.
 - Discord bot gateway with message, member, reaction, interaction, and guild lifecycle event handlers.
 - PostgreSQL schema for guild settings, modules, audit events, moderation cases, purge configs, scheduled jobs, custom commands, automod rules, reaction roles, ticket panels, tickets, ticket transcripts, levels, economy accounts, and dashboard users.
 - Dashboard/control panel served from the same Railway service.
@@ -16,6 +16,7 @@ The current implementation is designed for Railway with Node.js, discord.js v14,
 - Ticketing control inspired by ticket panel workflows: panel creation, private ticket channels, staff roles, claim, close, and stored transcripts.
 - Feature isolation boundaries: Discord commands are lazy-loaded by feature, dashboard routes are lazy-loaded by module, event handlers run through per-feature guards, and dashboard overview sections degrade independently.
 - Purge integrity controls: per-channel purge command, scheduled purge jobs, media matching for attachments/GIFs/stickers/emojis, bot permission checks, paginated message inspection, and honest delete/failure counts.
+- Invite controls: Manage Server users can create one-use server invites and send them by DM to a Discord user ID or username already visible to the bot.
 - Remote Ops voice bridge: dashboard voice join/leave, live self mute/deaf updates, hold-to-talk microphone transmission, screen/app audio transmission when the browser exposes it, inbound voice monitoring, protected voice activity records, and protected 30-second WAV clips.
 
 ## Module Isolation Rule
@@ -32,6 +33,7 @@ No feature should be so tightly coupled to another feature that one outage takes
 
 - `/setup`
 - `/dashboard`
+- `/invite`
 - `/purge`
 - `/mod`
 - `/automod`
@@ -93,4 +95,5 @@ npm.cmd test
 - Full test suite requires dependencies to install successfully.
 - Sharding, premium/billing, and music are intentionally out of v1 scope.
 - Ticket transcripts store the most recent 100 channel messages at close time.
+- Invite-by-username only works for users already visible to the bot; Discord does not provide global username search to bot tokens, so user ID is the reliable target.
 - Voice clip transcription rows are created with `not_configured` status until a speech-to-text provider is added.

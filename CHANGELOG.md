@@ -2,6 +2,12 @@
 
 All notable changes to ThePurge are documented here.
 
+## [4.3.10] - 2026-07-10
+
+### Added
+
+- Added a Manage Server invite workflow in the bot and control panel for sending one-use server invite links by user ID or known username.
+
 ## [4.3.9] - 2026-07-05
 
 ### Changed

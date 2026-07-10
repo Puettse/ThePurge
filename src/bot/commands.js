@@ -1,5 +1,6 @@
 import {
   ChannelType,
+  PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
 
@@ -10,6 +11,19 @@ export const commandData = [
   new SlashCommandBuilder()
     .setName('dashboard')
     .setDescription('Get the dashboard link and current bot health.'),
+  new SlashCommandBuilder()
+    .setName('invite')
+    .setDescription('DM a one-use server invite to a user by ID or known username.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addStringOption((option) => option
+      .setName('target')
+      .setDescription('Discord user ID, mention, or username visible to the bot')
+      .setRequired(true))
+    .addChannelOption((option) => option
+      .setName('channel')
+      .setDescription('Channel where the invite should be created')
+      .addChannelTypes(ChannelType.GuildText)
+      .setRequired(false)),
   new SlashCommandBuilder()
     .setName('purge')
     .setDescription('Delete recent media messages from a channel.')
