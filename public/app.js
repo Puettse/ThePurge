@@ -820,6 +820,8 @@ function renderServerBuilderError(error) {
   elements.serverBuilderResult.textContent = JSON.stringify({
     ok: false,
     error: error.message,
+    errors: error.response?.errors || [],
+    response: error.response || undefined,
   }, null, 2);
   renderServerBuilder();
 }
@@ -1409,7 +1411,14 @@ async function api(path, options = {}) {
   });
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Request failed: ${response.status}`);
+  if (!response.ok) {
+    const detail = Array.isArray(data.errors) && data.errors.length
+      ? ` ${data.errors.slice(0, 8).join(' | ')}`
+      : '';
+    const error = new Error(data.error || data.message || `Request failed: ${response.status}${detail}`);
+    error.response = data;
+    throw error;
+  }
   return data;
 }
 
