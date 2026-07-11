@@ -484,12 +484,6 @@ async function applyServerBuilderPlan(context, guild, actor, { configKey, config
         summary.create += 1;
       }
 
-      if (config.danger_zone?.allow_role_position_changes && Number.isInteger(role.position) && typeof discordRole.setPosition === 'function') {
-        await discordRole.setPosition(role.position, { reason }).catch((error) => {
-          warnings.push(`Role ${role.key} position update failed: ${error.message}`);
-        });
-      }
-
       roleIds.set(role.key, discordRole.id);
       await upsertServerBuilderMapping(context, guild.id, configKey, 'role', role.key, discordRole.id, role.name);
     } catch (error) {
@@ -497,6 +491,8 @@ async function applyServerBuilderPlan(context, guild, actor, { configKey, config
       errors.push(`Role ${role.key} apply failed: ${error.message}`);
     }
   }
+
+  await reorderServerBuilderRoles({ config, guild, roleIds, reason, warnings });
 
   for (const category of config.categories || []) {
     const operation = plan.operations.find((item) => item.objectType === 'category' && item.key === category.key && item.phase === 'build');
@@ -705,14 +701,10 @@ function checkBotBuildPermissions(state, config, mode) {
 
   if (config.danger_zone?.allow_role_position_changes) {
     const botPosition = botMember.roles?.highest?.position;
-    if (Number.isFinite(botPosition)) {
-      for (const role of config.roles || []) {
-        if (Number.isInteger(role.position) && role.position >= botPosition) {
-          errors.push(`Role ${role.key} position ${role.position} is at or above the bot highest role position ${botPosition}.`);
-        }
-      }
-    } else {
+    if (!Number.isFinite(botPosition)) {
       warnings.push('Could not verify bot highest role position before role moves.');
+    } else if ((config.roles || []).some((role) => Number.isInteger(role.position))) {
+      warnings.push('Config role positions are treated as blueprint order. Generated roles will be ordered below the bot highest role during apply.');
     }
   }
 
@@ -968,6 +960,42 @@ function rolePayload(role, config) {
     mentionable: Boolean(role.mentionable),
     permissions: permissionBits(role.permissions?.allow || []),
   };
+}
+
+async function reorderServerBuilderRoles({ config, guild, roleIds, reason, warnings }) {
+  if (!config.danger_zone?.allow_role_position_changes) return;
+  const sortedRoles = (config.roles || [])
+    .filter((role) => Number.isInteger(role.position) && roleIds.has(role.key))
+    .sort((left, right) => left.position - right.position);
+  if (sortedRoles.length === 0) return;
+
+  await guild.roles.fetch?.().catch(() => null);
+  const botMember = guild.members?.me || await guild.members?.fetchMe?.().catch(() => null);
+  const botPosition = botMember?.roles?.highest?.position;
+  if (!Number.isFinite(botPosition)) {
+    warnings.push('Role ordering skipped because the bot highest role position could not be read after role creation.');
+    return;
+  }
+
+  const highestAssignablePosition = botPosition - 1;
+  if (highestAssignablePosition < sortedRoles.length) {
+    warnings.push(`Role ordering skipped because Discord reported only ${highestAssignablePosition} assignable position(s) below the bot role for ${sortedRoles.length} configured roles.`);
+    return;
+  }
+
+  const startPosition = highestAssignablePosition - sortedRoles.length + 1;
+  for (const [index, roleConfig] of sortedRoles.entries()) {
+    const roleId = roleIds.get(roleConfig.key);
+    const discordRole = guild.roles.cache?.get?.(roleId);
+    if (!discordRole || typeof discordRole.setPosition !== 'function') continue;
+    if (discordRole.editable === false || discordRole.managed) {
+      warnings.push(`Role ${roleConfig.key} ordering skipped because the role is not editable.`);
+      continue;
+    }
+    await discordRole.setPosition(startPosition + index, { reason }).catch((error) => {
+      warnings.push(`Role ${roleConfig.key} ordering failed: ${error.message}`);
+    });
+  }
 }
 
 function categoryPayload(category) {

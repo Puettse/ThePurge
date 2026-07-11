@@ -18,6 +18,7 @@ All notable changes to ThePurge are documented here.
 ### Fixed
 
 - Changed Server Builder `CREATE` mode to accept a fresh Discord server with default starter channels/categories instead of requiring a literally empty guild.
+- Changed Server Builder role position handling so config positions are treated as blueprint order, not absolute Discord role positions.
 
 ## [4.3.10] - 2026-07-10
 

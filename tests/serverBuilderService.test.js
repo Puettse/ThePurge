@@ -95,6 +95,21 @@ test('CREATE mode allows Discord starter channels on a fresh server', async () =
   assert.match(plan.warnings.join('\n'), /Discord defaults/);
 });
 
+test('CREATE mode treats role positions as blueprint order, not absolute Discord positions', async () => {
+  const guild = createMockGuild({ botPosition: 3 });
+
+  const plan = await createServerBuilderPlan({
+    guild,
+    config: validConfig(),
+    mode: 'CREATE',
+    mappings: [],
+  });
+
+  assert.equal(plan.ok, true);
+  assert.doesNotMatch(plan.errors.join('\n'), /bot highest role position 3/);
+  assert.match(plan.warnings.join('\n'), /blueprint order/);
+});
+
 test('CREATE mode still blocks populated servers', async () => {
   const guild = createMockGuild({
     channels: Array.from({ length: 9 }, (_, index) => createChannel({
@@ -155,7 +170,7 @@ function createMockGuild(options = {}) {
   const botMember = {
     permissions: { has: (permission) => permissions.has(permission) },
     roles: {
-      highest: { position: 500 },
+      highest: { position: options.botPosition || 500 },
       botRole: { id: 'bot-role' },
     },
   };
@@ -165,7 +180,7 @@ function createMockGuild(options = {}) {
     roles: {
       cache: new Map([
         ['guild-1', createRole({ id: 'guild-1', name: '@everyone', position: 0 })],
-        ['bot-role', createRole({ id: 'bot-role', name: 'ThePurge', position: 499, managed: true })],
+        ['bot-role', createRole({ id: 'bot-role', name: 'ThePurge', position: options.botPosition || 499, managed: true })],
         ...(options.roles || []).map((role) => [role.id, role]),
       ]),
       fetch: async () => null,

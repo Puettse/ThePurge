@@ -45,6 +45,7 @@ Use the Bot Control Page:
 7. Click `Apply` only after preview succeeds.
 
 The canonical template is `docs/server-builder.example.yaml`. It supports `schema_version`, `server`, `danger_zone`, named `colors`, keyed `roles`, keyed `categories`, keyed `channels`, and `post_build`.
+Role `position` values are blueprint order values. Server Builder orders generated roles below the bot's highest role during apply; those numbers are not treated as absolute Discord role positions during preview.
 
 Build modes:
 
