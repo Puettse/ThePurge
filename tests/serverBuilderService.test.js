@@ -73,6 +73,48 @@ test('CREATE dry-run produces a plan without mutating Discord', async () => {
   assert.ok(plan.operations.some((operation) => operation.label === 'permission_overwrites'));
 });
 
+test('CREATE mode allows Discord starter channels on a fresh server', async () => {
+  const config = validConfig();
+  config.danger_zone.allow_deletes = true;
+  const guild = createMockGuild({
+    channels: [
+      createChannel({ id: 'starter-text', name: 'default-chat', type: ChannelType.GuildText }),
+      createChannel({ id: 'starter-voice', name: 'Default Voice', type: ChannelType.GuildVoice }),
+    ],
+  });
+
+  const plan = await createServerBuilderPlan({
+    guild,
+    config,
+    mode: 'CREATE',
+    mappings: [],
+  });
+
+  assert.equal(plan.ok, true);
+  assert.equal(plan.summary.delete, 2);
+  assert.match(plan.warnings.join('\n'), /Discord defaults/);
+});
+
+test('CREATE mode still blocks populated servers', async () => {
+  const guild = createMockGuild({
+    channels: Array.from({ length: 9 }, (_, index) => createChannel({
+      id: `existing-${index}`,
+      name: `existing-${index}`,
+      type: ChannelType.GuildText,
+    })),
+  });
+
+  const plan = await createServerBuilderPlan({
+    guild,
+    config: validConfig(),
+    mode: 'CREATE',
+    mappings: [],
+  });
+
+  assert.equal(plan.ok, false);
+  assert.match(plan.errors.join('\n'), /more than the 8 item starter limit/);
+});
+
 test('UPDATE mode blocks unmapped exact-name conflicts', async () => {
   const guild = createMockGuild({
     roles: [

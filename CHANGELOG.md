@@ -15,6 +15,10 @@ All notable changes to ThePurge are documented here.
 - Server Builder apply actions require Discord Administrator permission and are not exposed through slash commands or prefix commands.
 - Server Builder blocks deletes, Administrator grants, and role position moves unless the uploaded config explicitly enables the matching `danger_zone` flag.
 
+### Fixed
+
+- Changed Server Builder `CREATE` mode to accept a fresh Discord server with default starter channels/categories instead of requiring a literally empty guild.
+
 ## [4.3.10] - 2026-07-10
 
 ### Added

@@ -48,7 +48,7 @@ The canonical template is `docs/server-builder.example.yaml`. It supports `schem
 
 Build modes:
 
-- `CREATE`: build into a selected guild only when it is effectively blank.
+- `CREATE`: build into a selected fresh guild; Discord starter channels/categories are allowed and can be removed when `danger_zone.allow_deletes` is true.
 - `UPDATE`: create/update mapped objects only and block unmapped exact-name conflicts.
 - `REVAMP`: dashboard-only destructive rebuild, gated by `danger_zone.allow_deletes`.
 - `CLEAN`: dashboard-only cleanup of explicit config cleanup targets, gated by `danger_zone.allow_deletes`.

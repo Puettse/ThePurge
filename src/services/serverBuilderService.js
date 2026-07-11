@@ -14,6 +14,7 @@ export const SERVER_BUILDER_MODES = ['CREATE', 'UPDATE', 'REVAMP', 'CLEAN'];
 
 const allowedExtensions = new Set(['.yaml', '.yml', '.json']);
 const destructiveModes = new Set(['REVAMP', 'CLEAN']);
+const createStarterChannelLimit = 8;
 const channelTypeByName = {
   text: ChannelType.GuildText,
   voice: ChannelType.GuildVoice,
@@ -410,10 +411,9 @@ export async function createServerBuilderPlan({ guild, config, configKey = 'prev
   warnings.push(...botCheck.warnings);
 
   if (normalizedMode === 'CREATE') {
-    const blank = isEffectivelyBlankGuild(state);
-    if (!blank.ok) {
-      errors.push(`CREATE mode requires a blank selected guild. Existing structure found: ${blank.reasons.join(', ')}.`);
-    }
+    const readiness = assessCreateGuildReadiness(state);
+    errors.push(...readiness.errors);
+    warnings.push(...readiness.warnings);
   }
 
   if (normalizedMode === 'CLEAN') {
@@ -422,6 +422,9 @@ export async function createServerBuilderPlan({ guild, config, configKey = 'prev
     addRevampDeleteOperations({ state, operations, errors, summary });
     addBuildOperations({ config, configKey, state, mappingIndex: new Map(), mode: normalizedMode, operations, errors, summary });
   } else {
+    if (normalizedMode === 'CREATE') {
+      addCreateStarterCleanupOperations({ config, state, operations, warnings, summary });
+    }
     addBuildOperations({ config, configKey, state, mappingIndex, mode: normalizedMode, operations, errors, summary });
   }
 
@@ -720,14 +723,23 @@ function checkBotBuildPermissions(state, config, mode) {
   return { errors, warnings };
 }
 
-function isEffectivelyBlankGuild(state) {
+function assessCreateGuildReadiness(state) {
   const botRoleId = state.botMember?.roles?.botRole?.id || null;
   const roles = state.roles.filter((role) => !role.managed && role.id !== botRoleId);
   const channels = state.allChannels.filter(Boolean);
-  const reasons = [];
-  if (roles.length > 0) reasons.push(`${roles.length} non-managed role(s)`);
-  if (channels.length > 0) reasons.push(`${channels.length} channel/category item(s)`);
-  return { ok: reasons.length === 0, reasons };
+  const errors = [];
+  const warnings = [];
+
+  if (roles.length > 0) {
+    errors.push(`CREATE mode only accepts a fresh server with no custom roles. Found ${roles.length} existing non-managed role(s).`);
+  }
+  if (channels.length > createStarterChannelLimit) {
+    errors.push(`CREATE mode only accepts a fresh starter server. Found ${channels.length} existing channel/category item(s), which is more than the ${createStarterChannelLimit} item starter limit. Use UPDATE or REVAMP instead.`);
+  } else if (channels.length > 0) {
+    warnings.push(`CREATE mode will treat ${channels.length} existing starter channel/category item(s) as Discord defaults.`);
+  }
+
+  return { ok: errors.length === 0, errors, warnings };
 }
 
 function addBuildOperations({ config, state, mappingIndex, mode, operations, errors, summary }) {
@@ -776,6 +788,41 @@ function addBuildOperations({ config, state, mappingIndex, mode, operations, err
       label: 'permission_overwrites',
     });
   }
+}
+
+function addCreateStarterCleanupOperations({ config, state, operations, warnings, summary }) {
+  const starterChannels = state.channels.filter((channel) => !matchesConfiguredChannel(channel, config));
+  const starterCategories = state.categories.filter((category) => !matchesConfiguredCategory(category, config));
+  const starterItems = [...starterChannels, ...starterCategories];
+
+  if (starterItems.length === 0) return;
+  if (!config.danger_zone?.allow_deletes) {
+    warnings.push(`CREATE mode found ${starterItems.length} Discord starter channel/category item(s), but danger_zone.allow_deletes is false, so they will be left in place.`);
+    summary.skip += starterItems.length;
+    return;
+  }
+
+  for (const channel of starterChannels) {
+    if (!isChannelDeletable(channel)) continue;
+    operations.push(deleteOperation('channel', channel));
+    summary.delete += 1;
+  }
+
+  for (const category of starterCategories) {
+    if (!isChannelDeletable(category)) continue;
+    operations.push(deleteOperation('category', category));
+    summary.delete += 1;
+  }
+}
+
+function matchesConfiguredChannel(channel, config) {
+  return (config.channels || []).some((configured) => (
+    configured.name === channel.name && channelTypeByName[configured.type] === channel.type
+  ));
+}
+
+function matchesConfiguredCategory(category, config) {
+  return (config.categories || []).some((configured) => configured.name === category.name);
 }
 
 function addBuildOperation(operations, summary, operation) {
