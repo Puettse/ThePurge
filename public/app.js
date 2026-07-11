@@ -657,7 +657,7 @@ function populateChannelSelect(select, channels, placeholder) {
   for (const channel of channels) {
     const option = document.createElement('option');
     option.value = channel.id;
-    option.textContent = channel.name;
+    option.textContent = channel.displayName || channel.name;
     select.append(option);
   }
 

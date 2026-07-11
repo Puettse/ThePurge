@@ -1,4 +1,4 @@
-import { AttachmentBuilder, ChannelType, PermissionsBitField } from 'discord.js';
+import { AttachmentBuilder, ChannelType, PermissionFlagsBits, PermissionsBitField } from 'discord.js';
 import {
   createAudioPlayer,
   createAudioResource,
@@ -24,6 +24,12 @@ const TEXT_CHANNEL_TYPES = new Set([
   ChannelType.AnnouncementThread,
 ]);
 
+const THREAD_CHANNEL_TYPES = new Set([
+  ChannelType.PublicThread,
+  ChannelType.PrivateThread,
+  ChannelType.AnnouncementThread,
+]);
+
 const VOICE_CHANNEL_TYPES = new Set([
   ChannelType.GuildVoice,
   ChannelType.GuildStageVoice,
@@ -40,20 +46,22 @@ const remoteMicSessions = new Map();
 const remoteReceiveSessions = new Map();
 
 export async function listRemoteChannels(guild) {
-  const channels = await guild.channels.fetch();
+  const fetchedChannels = await guild.channels.fetch().catch(() => null);
+  const activeThreads = await guild.channels.fetchActiveThreads?.().catch(() => null);
+  const channels = mergeChannelCollections(
+    fetchedChannels,
+    guild.channels.cache,
+    activeThreads?.threads,
+  );
+  const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
   const textChannels = [];
   const voiceChannels = [];
 
   for (const channel of channels.values()) {
     if (!channel) continue;
-    const item = {
-      id: channel.id,
-      name: channel.name,
-      type: channel.type,
-      parentId: channel.parentId || null,
-    };
+    const item = formatRemoteChannelItem(guild, channel);
 
-    if (TEXT_CHANNEL_TYPES.has(channel.type) && typeof channel.send === 'function') {
+    if (canSendRemoteMessageToChannel(channel, botMember)) {
       textChannels.push(item);
     }
 
@@ -65,7 +73,7 @@ export async function listRemoteChannels(guild) {
     }
   }
 
-  const sortByName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  const sortByName = (a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name, undefined, { sensitivity: 'base' });
   textChannels.sort(sortByName);
   voiceChannels.sort(sortByName);
 
@@ -559,9 +567,53 @@ export class RemoteValidationError extends Error {
   }
 }
 
+function canSendRemoteMessageToChannel(channel, botMember) {
+  if (!channel || !botMember || typeof channel.send !== 'function' || !TEXT_CHANNEL_TYPES.has(channel.type)) {
+    return false;
+  }
+
+  const permissions = channel.permissionsFor?.(botMember);
+  if (!permissions?.has(PermissionFlagsBits.ViewChannel)) {
+    return false;
+  }
+
+  if (THREAD_CHANNEL_TYPES.has(channel.type)) {
+    return permissions.has(PermissionFlagsBits.SendMessagesInThreads) || permissions.has(PermissionFlagsBits.SendMessages);
+  }
+
+  return permissions.has(PermissionFlagsBits.SendMessages);
+}
+
+function mergeChannelCollections(...collections) {
+  const merged = new Map();
+  for (const collection of collections) {
+    if (!collection) continue;
+    const values = typeof collection.values === 'function' ? collection.values() : Object.values(collection);
+    for (const channel of values) {
+      if (channel?.id) merged.set(channel.id, channel);
+    }
+  }
+  return merged;
+}
+
+function formatRemoteChannelItem(guild, channel) {
+  const parent = channel.parent || (channel.parentId ? guild.channels.cache?.get?.(channel.parentId) : null);
+  const displayName = parent?.name ? `${parent.name} / ${channel.name}` : channel.name;
+
+  return {
+    id: channel.id,
+    name: channel.name,
+    displayName,
+    type: channel.type,
+    parentId: channel.parentId || null,
+    parentName: parent?.name || null,
+  };
+}
+
 async function fetchTextChannel(guild, channelId) {
   const channel = await guild.channels.fetch(channelId).catch(() => null);
-  if (!channel || !TEXT_CHANNEL_TYPES.has(channel.type) || typeof channel.send !== 'function') {
+  const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+  if (!canSendRemoteMessageToChannel(channel, botMember)) {
     throw new RemoteValidationError('A text-capable channel is required.');
   }
   return channel;

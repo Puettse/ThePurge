@@ -19,6 +19,7 @@ All notable changes to ThePurge are documented here.
 
 - Changed Server Builder `CREATE` mode to accept a fresh Discord server with default starter channels/categories instead of requiring a literally empty guild.
 - Changed Server Builder role position handling so config positions are treated as blueprint order, not absolute Discord role positions.
+- Changed the Remote Ops send-message channel picker to merge fetched channels, cached channels, and active threads, then show every channel the bot can actually send to.
 
 ## [4.3.10] - 2026-07-10
 
