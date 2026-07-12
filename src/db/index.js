@@ -110,6 +110,16 @@ export async function migrate(db) {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    DO $do$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'purge_configs' AND column_name = 'media_types'
+      ) THEN
+        ALTER TABLE purge_configs RENAME COLUMN media_types TO media_type;
+      END IF;
+    END $do$;
+
     DELETE FROM purge_configs newer
     USING purge_configs older
     WHERE newer.guild_id = older.guild_id
